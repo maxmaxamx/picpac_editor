@@ -10,6 +10,7 @@ class Zone1TopBar extends StatelessWidget implements PreferredSizeWidget {
   final List<MemberModel> members;
   final VoidCallback? onBackTap;
   final VoidCallback? onShareTap;
+  final VoidCallback? onMembersTap;
 
   const Zone1TopBar({
     super.key,
@@ -17,6 +18,7 @@ class Zone1TopBar extends StatelessWidget implements PreferredSizeWidget {
     required this.members,
     this.onBackTap,
     this.onShareTap,
+    this.onMembersTap,
   });
 
   @override
@@ -65,7 +67,11 @@ class Zone1TopBar extends StatelessWidget implements PreferredSizeWidget {
           const SizedBox(width: 8.0),
 
           // Стек аватаров онлайн (до 4 кружков диаметром 28px с нахлестом -8px)
-          _buildAvatarStack(members),
+          GestureDetector(
+            onTap: onMembersTap,
+            behavior: HitTestBehavior.opaque,
+            child: _buildAvatarStack(members),
+          ),
 
           const SizedBox(width: 8.0),
 

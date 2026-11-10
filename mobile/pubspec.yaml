@@ -39,6 +39,10 @@ dependencies:
   google_fonts: ^9.0.0
   lucide_icons_flutter: ^3.0.0
   cached_network_image: ^4.0.6
+  dio: ^5.7.0
+  socket_io_client: ^3.0.2
+  image_picker: ^1.2.4
+
 
 dev_dependencies:
   flutter_test:

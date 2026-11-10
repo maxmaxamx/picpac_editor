@@ -1,0 +1,39 @@
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Backend
+backend/node_modules/
+backend/dist/
+backend/*.sqlite
+backend/*.sqlite3
+backend/*.db
+backend/picpac_dev.sqlite
+backend/.env
+backend/.env.local
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/*.log
+
+# Mobile / Flutter
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.pub-cache/
+mobile/.pub/
+mobile/build/
+mobile/.packages
+mobile/.idea/
+mobile/*.iml
+mobile/.DS_Store
+
+# IDE & Editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace

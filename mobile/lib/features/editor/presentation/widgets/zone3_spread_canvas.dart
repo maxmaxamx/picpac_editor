@@ -10,6 +10,7 @@ class Zone3SpreadCanvas extends StatelessWidget {
   final int totalPages;
   final ValueChanged<int> onPageChange;
   final ValueChanged<SlotModel> onSlotTap;
+  final double aspectRatio;
 
   const Zone3SpreadCanvas({
     super.key,
@@ -17,6 +18,7 @@ class Zone3SpreadCanvas extends StatelessWidget {
     required this.totalPages,
     required this.onPageChange,
     required this.onSlotTap,
+    this.aspectRatio = 3.0 / 4.0,
   });
 
   @override
@@ -24,7 +26,6 @@ class Zone3SpreadCanvas extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         // Доступное пространство
-        // Вычитаем 36px (пилл) + 10px (отступ между листом и пиллом) + 12px * 2 (отступы сверху/снизу)
         const double pillHeight = 36.0;
         const double pillMarginTop = 10.0;
         const double verticalPadding = 12.0;
@@ -35,8 +36,7 @@ class Zone3SpreadCanvas extends StatelessWidget {
             verticalPadding * 2;
         final double maxAvailableWidth = constraints.maxWidth - 32.0; // отступы по бокам 16px
 
-        // Пропорции листа 3:4
-        const double aspectRatio = 3.0 / 4.0;
+        // Пропорции листа (1:1 для 20×20 или 3:4 для 21×30)
         double sheetWidth = maxAvailableWidth;
         double sheetHeight = sheetWidth / aspectRatio;
 
@@ -102,10 +102,10 @@ class Zone3SpreadCanvas extends StatelessWidget {
                         ),
                       ),
 
-                      // Сетка слотов 2×2 с внутренним отступом 14px и зазором 10px
+                      // Сетка слотов в зависимости от выбранного лейаута (1, 2, 3 или 4 слота)
                       Padding(
                         padding: const EdgeInsets.all(14.0),
-                        child: _buildSlotsGrid(),
+                        child: _buildDynamicLayout(),
                       ),
                     ],
                   ),
@@ -127,9 +127,76 @@ class Zone3SpreadCanvas extends StatelessWidget {
     );
   }
 
-  Widget _buildSlotsGrid() {
+  Widget _buildDynamicLayout() {
     final slots = page.slots;
 
+    if (slots.length <= 1) {
+      // 1 слот: на всю страницу
+      final slot0 = slots.isNotEmpty ? slots[0] : _fallbackSlot(0);
+      return Zone3SlotWidget(
+        slot: slot0,
+        onTap: () => onSlotTap(slot0),
+      );
+    }
+
+    if (slots.length == 2) {
+      // 2 слота: верх и низ
+      return Column(
+        children: [
+          Expanded(
+            child: Zone3SlotWidget(
+              slot: slots[0],
+              onTap: () => onSlotTap(slots[0]),
+            ),
+          ),
+          const SizedBox(height: 10.0),
+          Expanded(
+            child: Zone3SlotWidget(
+              slot: slots[1],
+              onTap: () => onSlotTap(slots[1]),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (slots.length == 3) {
+      // 3 слота: 1 большой сверху, 2 снизу
+      return Column(
+        children: [
+          Expanded(
+            flex: 6,
+            child: Zone3SlotWidget(
+              slot: slots[0],
+              onTap: () => onSlotTap(slots[0]),
+            ),
+          ),
+          const SizedBox(height: 10.0),
+          Expanded(
+            flex: 5,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Zone3SlotWidget(
+                    slot: slots[1],
+                    onTap: () => onSlotTap(slots[1]),
+                  ),
+                ),
+                const SizedBox(width: 10.0),
+                Expanded(
+                  child: Zone3SlotWidget(
+                    slot: slots[2],
+                    onTap: () => onSlotTap(slots[2]),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    // По умолчанию 4 слота: Сетка 2×2
     return Column(
       children: [
         // Верхний ряд: Слот 0 и Слот 1
@@ -138,17 +205,15 @@ class Zone3SpreadCanvas extends StatelessWidget {
             children: [
               Expanded(
                 child: Zone3SlotWidget(
-                  slot: slots.isNotEmpty ? slots[0] : _fallbackSlot(0),
-                  onTap: () => onSlotTap(
-                      slots.isNotEmpty ? slots[0] : _fallbackSlot(0)),
+                  slot: slots[0],
+                  onTap: () => onSlotTap(slots[0]),
                 ),
               ),
               const SizedBox(width: 10.0),
               Expanded(
                 child: Zone3SlotWidget(
-                  slot: slots.length > 1 ? slots[1] : _fallbackSlot(1),
-                  onTap: () => onSlotTap(
-                      slots.length > 1 ? slots[1] : _fallbackSlot(1)),
+                  slot: slots[1],
+                  onTap: () => onSlotTap(slots[1]),
                 ),
               ),
             ],

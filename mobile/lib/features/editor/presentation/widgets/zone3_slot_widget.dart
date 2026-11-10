@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/picpac_colors.dart';
 import '../../../../core/theme/picpac_typography.dart';
 import '../../../../core/widgets/dashed_border_box.dart';
+import '../../../../core/widgets/picpac_image.dart';
 import '../../domain/models.dart';
 
 class Zone3SlotWidget extends StatelessWidget {
@@ -180,23 +180,9 @@ class Zone3SlotWidget extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              ClipRRect(
+              PicPacImage(
+                imageUrl: slot.imageUrl,
                 borderRadius: BorderRadius.circular(6.0),
-                child: CachedNetworkImage(
-                  imageUrl: slot.imageUrl ?? '',
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: PicPacColors.surfaceGrey,
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: PicPacColors.surfaceGrey,
-                    child: const Icon(
-                      LucideIcons.image,
-                      size: 20.0,
-                      color: PicPacColors.textMuted,
-                    ),
-                  ),
-                ),
               ),
 
               // Капсула реакций в правом нижнем углу фото

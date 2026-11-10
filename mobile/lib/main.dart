@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'core/theme/app_theme.dart';
-import 'features/editor/presentation/screens/spread_editor_screen.dart';
+import 'features/onboarding/presentation/screens/onboarding_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +23,7 @@ class PicPacApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: PicPacTheme.shadTheme,
       materialThemeBuilder: (context, theme) => PicPacTheme.lightTheme,
-      home: const SpreadEditorScreen(),
+      home: const OnboardingScreen(),
     );
   }
 }

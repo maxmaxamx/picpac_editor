@@ -3,7 +3,7 @@ import '../../../../core/theme/picpac_colors.dart';
 import '../../../../core/theme/picpac_typography.dart';
 import '../../domain/models.dart';
 
-class Zone2PageMinimap extends StatelessWidget {
+class Zone2PageMinimap extends StatefulWidget {
   final List<PageModel> pages;
   final int currentPage;
   final ValueChanged<int> onPageSelected;
@@ -14,6 +14,66 @@ class Zone2PageMinimap extends StatelessWidget {
     required this.currentPage,
     required this.onPageSelected,
   });
+
+  @override
+  State<Zone2PageMinimap> createState() => _Zone2PageMinimapState();
+}
+
+class _Zone2PageMinimapState extends State<Zone2PageMinimap> {
+  final ScrollController _scrollController = ScrollController();
+
+  static const double _itemWidth = 58.0;
+  static const double _itemSpacing = 8.0;
+  static const double _horizontalPadding = 12.0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToPage(widget.currentPage, animate: false);
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant Zone2PageMinimap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentPage != widget.currentPage) {
+      _scrollToPage(widget.currentPage, animate: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToPage(int pageNumber, {required bool animate}) {
+    if (!_scrollController.hasClients) return;
+
+    final index = widget.pages.indexWhere((p) => p.pageNumber == pageNumber);
+    if (index == -1) return;
+
+    final itemStride = _itemWidth + _itemSpacing;
+    final itemCenter = _horizontalPadding + (index * itemStride) + (_itemWidth / 2);
+    final viewportWidth = _scrollController.position.viewportDimension;
+    final targetOffset = itemCenter - (viewportWidth / 2);
+
+    final clampedOffset = targetOffset.clamp(
+      0.0,
+      _scrollController.position.maxScrollExtent,
+    );
+
+    if (animate) {
+      _scrollController.animateTo(
+        clampedOffset,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeInOutCubic,
+      );
+    } else {
+      _scrollController.jumpTo(clampedOffset);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,20 +89,24 @@ class Zone2PageMinimap extends StatelessWidget {
         ),
       ),
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+        controller: _scrollController,
+        padding: const EdgeInsets.symmetric(
+          horizontal: _horizontalPadding,
+          vertical: 4.0,
+        ),
         scrollDirection: Axis.horizontal,
-        itemCount: pages.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 8.0),
+        itemCount: widget.pages.length,
+        separatorBuilder: (context, index) => const SizedBox(width: _itemSpacing),
         itemBuilder: (context, index) {
-          final page = pages[index];
-          final isSelected = page.pageNumber == currentPage;
+          final page = widget.pages[index];
+          final isSelected = page.pageNumber == widget.currentPage;
 
           return GestureDetector(
-            onTap: () => onPageSelected(page.pageNumber),
+            onTap: () => widget.onPageSelected(page.pageNumber),
             behavior: HitTestBehavior.opaque,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
-              width: 58.0,
+              width: _itemWidth,
               decoration: BoxDecoration(
                 color: isSelected ? PicPacColors.white : PicPacColors.surfaceGrey,
                 borderRadius: BorderRadius.circular(6.0),
@@ -73,7 +137,7 @@ class Zone2PageMinimap extends StatelessWidget {
                   // Индикация заполнения слотов (■ ■ □ □)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(4, (dotIndex) {
+                    children: List.generate(page.slots.length, (dotIndex) {
                       final isSlotFilled =
                           dotIndex < page.filledSlotsCount;
                       return Container(
@@ -100,4 +164,3 @@ class Zone2PageMinimap extends StatelessWidget {
     );
   }
 }
-

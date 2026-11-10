@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: picpac_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: picpac_db
+      POSTGRES_USER: picpac_user
+      POSTGRES_PASSWORD: picpac_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: picpac_backend
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      PORT: 3000
+      NODE_ENV: development
+      DATABASE_URL: postgres://picpac_user:picpac_password@postgres:5432/picpac_db
+      JWT_SECRET: picpac_dev_secret_key_2026
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/src:/app/src
+
+volumes:
+  postgres_data:
+
