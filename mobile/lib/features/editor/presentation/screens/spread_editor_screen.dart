@@ -940,20 +940,6 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
                             style: PicPacTypography.h2Section,
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
-                          decoration: BoxDecoration(
-                            color: PicPacColors.primaryCoralSoft,
-                            borderRadius: BorderRadius.circular(12.0),
-                          ),
-                          child: Text(
-                            'Всего: ${editorState.totalCoverVotes}',
-                            style: PicPacTypography.metaInfo.copyWith(
-                              color: PicPacColors.primaryCoral,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 6.0),

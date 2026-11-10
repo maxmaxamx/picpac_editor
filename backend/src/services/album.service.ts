@@ -18,6 +18,96 @@ export interface CreateAlbumDTO {
   totalSpreads?: number;
 }
 
+function getTemplatePageLayout(templateId: string, pageNumber: number): 'grid_4' | 'split_2' | 'single' | string {
+  switch (templateId) {
+    case 'classic_grad':
+      switch (pageNumber) {
+        case 1: return 'hero_centered';
+        case 2: return 'editorial_quote';
+        case 3: return 'split_vertical_2';
+        case 4: return 'grid_4';
+        case 5: return 'split_vertical_2';
+        case 6: return 'hero_centered';
+        case 7: return 'single_full';
+        case 8: return 'hero_top_split_bottom_3';
+        case 9: return 'split_vertical_3';
+        case 10: return 'split_horizontal_2';
+        default: return pageNumber % 2 === 0 ? 'grid_4' : 'split_vertical_2';
+      }
+    case 'minimalism':
+      switch (pageNumber) {
+        case 1: return 'hero_centered';
+        case 2: return 'split_vertical_2';
+        case 3: return 'single_full';
+        case 4: return 'grid_4';
+        case 5: return 'editorial_quote';
+        case 6: return 'split_horizontal_2';
+        case 7: return 'hero_centered';
+        case 8: return 'split_vertical_3';
+        case 9: return 'single_full';
+        case 10: return 'split_vertical_2';
+        default: return pageNumber % 2 === 0 ? 'split_vertical_2' : 'hero_centered';
+      }
+    case 'gentle_pastel':
+      switch (pageNumber) {
+        case 1: return 'editorial_quote';
+        case 2: return 'hero_top_split_bottom_3';
+        case 3: return 'split_vertical_2';
+        case 4: return 'grid_4';
+        case 5: return 'checkerboard_3';
+        case 6: return 'single_full';
+        case 7: return 'hero_top_trio_4';
+        case 8: return 'hero_centered';
+        case 9: return 'split_vertical_3';
+        case 10: return 'split_horizontal_2';
+        default: return pageNumber % 2 === 0 ? 'hero_top_split_bottom_3' : 'split_vertical_2';
+      }
+    case 'vintage_film':
+      switch (pageNumber) {
+        case 1: return 'editorial_quote';
+        case 2: return 'split_vertical_3';
+        case 3: return 'hero_top_trio_4';
+        case 4: return 'grid_4';
+        case 5: return 'hero_centered';
+        case 6: return 'split_horizontal_2';
+        case 7: return 'single_full';
+        case 8: return 'split_vertical_2';
+        case 9: return 'checkerboard_3';
+        case 10: return 'grid_4';
+        default: return pageNumber % 2 === 0 ? 'split_vertical_3' : 'hero_top_trio_4';
+      }
+    case 'primary_school':
+      switch (pageNumber) {
+        case 1: return 'editorial_quote';
+        case 2: return 'hero_top_trio_4';
+        case 3: return 'checkerboard_3';
+        case 4: return 'grid_4';
+        case 5: return 'split_vertical_2';
+        case 6: return 'hero_top_split_bottom_3';
+        case 7: return 'single_full';
+        case 8: return 'split_vertical_3';
+        case 9: return 'hero_centered';
+        case 10: return 'split_horizontal_2';
+        default: return pageNumber % 2 === 0 ? 'grid_4' : 'hero_top_split_bottom_3';
+      }
+    case 'school_drive':
+    default:
+      switch (pageNumber) {
+        case 1: return 'editorial_quote';
+        case 2: return 'hero_top_trio_4';
+        case 3: return 'split_vertical_2';
+        case 4: return 'grid_4';
+        case 5: return 'checkerboard_3';
+        case 6: return 'hero_centered';
+        case 7: return 'split_vertical_3';
+        case 8: return 'single_full';
+        case 9: return 'hero_top_split_bottom_3';
+        case 10: return 'split_horizontal_2';
+        default: return pageNumber % 2 === 0 ? 'hero_top_trio_4' : 'split_vertical_2';
+      }
+  }
+}
+
 export async function createAlbumTransaction(dto: CreateAlbumDTO) {
   const totalSpreads = dto.totalSpreads || 10;
   const totalPages = totalSpreads * 2;
@@ -51,16 +141,17 @@ export async function createAlbumTransaction(dto: CreateAlbumDTO) {
       { transaction: t }
     );
 
-    // 3. Автоматическая генерация разворотов, страниц и слотов
+    // 3. Автоматическая генерация разворотов, страниц и слотов в соответствии со стилем шаблона
     for (let spread = 1; spread <= totalSpreads; spread++) {
       // Левая страница разворота
       const leftPageNum = spread * 2 - 1;
+      const leftLayout = getTemplatePageLayout(album.templateId, leftPageNum);
       const leftPage = await Page.create(
         {
           albumId: album.id,
           pageNumber: leftPageNum,
           side: 'left',
-          layoutType: 'grid_4',
+          layoutType: leftLayout as any,
         },
         { transaction: t }
       );
@@ -78,12 +169,13 @@ export async function createAlbumTransaction(dto: CreateAlbumDTO) {
 
       // Правая страница разворота
       const rightPageNum = spread * 2;
+      const rightLayout = getTemplatePageLayout(album.templateId, rightPageNum);
       const rightPage = await Page.create(
         {
           albumId: album.id,
           pageNumber: rightPageNum,
           side: 'right',
-          layoutType: 'grid_4',
+          layoutType: rightLayout as any,
         },
         { transaction: t }
       );

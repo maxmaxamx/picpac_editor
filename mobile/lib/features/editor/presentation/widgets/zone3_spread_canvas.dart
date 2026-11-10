@@ -134,31 +134,6 @@ class Zone3SpreadCanvas extends StatelessWidget {
                   ),
                   child: Stack(
                     children: [
-                      // Фоновый стикер/водяной знак выбранного шаблона вверху страницы
-                      Positioned(
-                        right: 14.0,
-                        top: 10.0,
-                        child: Opacity(
-                          opacity: 0.45,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(style.icon, size: 11.0, color: style.accentColor),
-                              const SizedBox(width: 4.0),
-                              Text(
-                                '${style.fontTag} • СТР. ${page.pageNumber}',
-                                style: TextStyle(
-                                  fontSize: 8.5,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.6,
-                                  color: style.accentColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
                       // Полиграфическая линия безопасности (Print Safe Zone):
                       Positioned(
                         left: 6.0,

@@ -265,44 +265,6 @@ class Zone3CoverWidget extends StatelessWidget {
                                 ),
                               ),
                             ),
-
-                            const SizedBox(height: 10.0),
-
-                            // Кнопка голосования за обложку
-                            GestureDetector(
-                              onTap: onVoteTap,
-                              behavior: HitTestBehavior.opaque,
-                              child: Container(
-                                height: 38.0,
-                                decoration: BoxDecoration(
-                                  color: style.coverAccentColor,
-                                  borderRadius: BorderRadius.circular(8.0),
-                                ),
-                                alignment: Alignment.center,
-                                padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(LucideIcons.vote, size: 15.0, color: Colors.white),
-                                    const SizedBox(width: 6.0),
-                                    Flexible(
-                                      child: Text(
-                                        totalVotes > 0
-                                            ? 'Голосовать за обложку ($totalVotes)'
-                                            : 'Голосовать за обложку',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12.0,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
                           ],
                         ),
                       ),

@@ -79,7 +79,168 @@ class MockData {
     ),
   ];
 
-  static List<PageModel> generatePages() {
+  static Map<String, dynamic> getPageLayoutForTemplate(String templateId, int pageNumber) {
+    switch (templateId) {
+      case 'classic_grad':
+        switch (pageNumber) {
+          case 1:
+            return {'layout': 'hero_centered', 'slots': 1};
+          case 2:
+            return {'layout': 'editorial_quote', 'slots': 2, 'headline': 'CLASS OF 2026', 'subhead': 'Excellence & Memory'};
+          case 3:
+            return {'layout': 'split_vertical_2', 'slots': 2};
+          case 4:
+            return {'layout': 'grid_4', 'slots': 4};
+          case 5:
+            return {'layout': 'split_vertical_2', 'slots': 2};
+          case 6:
+            return {'layout': 'hero_centered', 'slots': 1};
+          case 7:
+            return {'layout': 'single_full', 'slots': 1};
+          case 8:
+            return {'layout': 'hero_top_split_bottom_3', 'slots': 3};
+          case 9:
+            return {'layout': 'split_vertical_3', 'slots': 3};
+          case 10:
+            return {'layout': 'split_horizontal_2', 'slots': 2};
+          default:
+            return {'layout': pageNumber % 2 == 0 ? 'grid_4' : 'split_vertical_2', 'slots': pageNumber % 2 == 0 ? 4 : 2};
+        }
+
+      case 'minimalism':
+        switch (pageNumber) {
+          case 1:
+            return {'layout': 'hero_centered', 'slots': 1};
+          case 2:
+            return {'layout': 'split_vertical_2', 'slots': 2};
+          case 3:
+            return {'layout': 'single_full', 'slots': 1};
+          case 4:
+            return {'layout': 'grid_4', 'slots': 4};
+          case 5:
+            return {'layout': 'editorial_quote', 'slots': 1, 'headline': 'MOMENTS', 'subhead': 'archive / 2026'};
+          case 6:
+            return {'layout': 'split_horizontal_2', 'slots': 2};
+          case 7:
+            return {'layout': 'hero_centered', 'slots': 1};
+          case 8:
+            return {'layout': 'split_vertical_3', 'slots': 3};
+          case 9:
+            return {'layout': 'single_full', 'slots': 1};
+          case 10:
+            return {'layout': 'split_vertical_2', 'slots': 2};
+          default:
+            return {'layout': pageNumber % 2 == 0 ? 'split_vertical_2' : 'hero_centered', 'slots': pageNumber % 2 == 0 ? 2 : 1};
+        }
+
+      case 'gentle_pastel':
+        switch (pageNumber) {
+          case 1:
+            return {'layout': 'editorial_quote', 'slots': 2, 'headline': 'Warm Memories', 'subhead': 'наши лучшие школьные дни'};
+          case 2:
+            return {'layout': 'hero_top_split_bottom_3', 'slots': 3};
+          case 3:
+            return {'layout': 'split_vertical_2', 'slots': 2};
+          case 4:
+            return {'layout': 'grid_4', 'slots': 4};
+          case 5:
+            return {'layout': 'checkerboard_3', 'slots': 3, 'headline': 'SOFT', 'subhead': 'PASTEL'};
+          case 6:
+            return {'layout': 'single_full', 'slots': 1};
+          case 7:
+            return {'layout': 'hero_top_trio_4', 'slots': 4};
+          case 8:
+            return {'layout': 'hero_centered', 'slots': 1};
+          case 9:
+            return {'layout': 'split_vertical_3', 'slots': 3};
+          case 10:
+            return {'layout': 'split_horizontal_2', 'slots': 2};
+          default:
+            return {'layout': pageNumber % 2 == 0 ? 'hero_top_split_bottom_3' : 'split_vertical_2', 'slots': pageNumber % 2 == 0 ? 3 : 2};
+        }
+
+      case 'vintage_film':
+        switch (pageNumber) {
+          case 1:
+            return {'layout': 'editorial_quote', 'slots': 2, 'headline': 'ANALOG 35MM', 'subhead': 'пленочные хроники нашего выпуска'};
+          case 2:
+            return {'layout': 'split_vertical_3', 'slots': 3};
+          case 3:
+            return {'layout': 'hero_top_trio_4', 'slots': 4};
+          case 4:
+            return {'layout': 'grid_4', 'slots': 4};
+          case 5:
+            return {'layout': 'hero_centered', 'slots': 1};
+          case 6:
+            return {'layout': 'split_horizontal_2', 'slots': 2};
+          case 7:
+            return {'layout': 'single_full', 'slots': 1};
+          case 8:
+            return {'layout': 'split_vertical_2', 'slots': 2};
+          case 9:
+            return {'layout': 'checkerboard_3', 'slots': 3, 'headline': 'FILM', 'subhead': '90s'};
+          case 10:
+            return {'layout': 'grid_4', 'slots': 4};
+          default:
+            return {'layout': pageNumber % 2 == 0 ? 'split_vertical_3' : 'hero_top_trio_4', 'slots': pageNumber % 2 == 0 ? 3 : 4};
+        }
+
+      case 'primary_school':
+        switch (pageNumber) {
+          case 1:
+            return {'layout': 'editorial_quote', 'slots': 2, 'headline': 'НАШ КЛАСС!', 'subhead': 'первые шаги к большим победам 🚀'};
+          case 2:
+            return {'layout': 'hero_top_trio_4', 'slots': 4};
+          case 3:
+            return {'layout': 'checkerboard_3', 'slots': 3, 'headline': '1-Й', 'subhead': 'КЛАСС'};
+          case 4:
+            return {'layout': 'grid_4', 'slots': 4};
+          case 5:
+            return {'layout': 'split_vertical_2', 'slots': 2};
+          case 6:
+            return {'layout': 'hero_top_split_bottom_3', 'slots': 3};
+          case 7:
+            return {'layout': 'single_full', 'slots': 1};
+          case 8:
+            return {'layout': 'split_vertical_3', 'slots': 3};
+          case 9:
+            return {'layout': 'hero_centered', 'slots': 1};
+          case 10:
+            return {'layout': 'split_horizontal_2', 'slots': 2};
+          default:
+            return {'layout': pageNumber % 2 == 0 ? 'grid_4' : 'hero_top_split_bottom_3', 'slots': pageNumber % 2 == 0 ? 4 : 3};
+        }
+
+      case 'school_drive':
+      default:
+        switch (pageNumber) {
+          case 1:
+            return {'layout': 'editorial_quote', 'slots': 2, 'headline': 'GO, BOYS!', 'subhead': '(да, это твой выпускной)'};
+          case 2:
+            return {'layout': 'hero_top_trio_4', 'slots': 4};
+          case 3:
+            return {'layout': 'split_vertical_2', 'slots': 2};
+          case 4:
+            return {'layout': 'grid_4', 'slots': 4};
+          case 5:
+            return {'layout': 'checkerboard_3', 'slots': 3, 'headline': "LET'S", 'subhead': 'GO'};
+          case 6:
+            return {'layout': 'hero_centered', 'slots': 1};
+          case 7:
+            return {'layout': 'split_vertical_3', 'slots': 3};
+          case 8:
+            return {'layout': 'single_full', 'slots': 1};
+          case 9:
+            return {'layout': 'hero_top_split_bottom_3', 'slots': 3};
+          case 10:
+            return {'layout': 'split_horizontal_2', 'slots': 2};
+          default:
+            return {'layout': pageNumber % 2 == 0 ? 'hero_top_trio_4' : 'split_vertical_2', 'slots': pageNumber % 2 == 0 ? 4 : 2};
+        }
+    }
+  }
+
+  static List<PageModel> generatePages({String templateId = 'school_drive'}) {
     return List.generate(20, (pageIndex) {
       final pageNumber = pageIndex + 1;
       final side = pageNumber % 2 == 0 ? 'left' : 'right';
@@ -126,94 +287,12 @@ class MockData {
         );
       }
 
-      // Определяем разнообразный макет и число слотов для каждой страницы
-      String layoutType;
-      int slotsCount;
-      String? headline;
-      String? subhead;
-
-      switch (pageNumber) {
-        case 1:
-          layoutType = 'editorial_quote';
-          slotsCount = 2;
-          headline = 'GO, BOYS!';
-          subhead = '(да, это твой выпускной)';
-          break;
-        case 2:
-          layoutType = 'hero_top_trio_4';
-          slotsCount = 4;
-          break;
-        case 3:
-          layoutType = 'split_vertical_2';
-          slotsCount = 2;
-          break;
-        case 5:
-          layoutType = 'checkerboard_3';
-          slotsCount = 3;
-          headline = "LET'S";
-          subhead = 'GO';
-          break;
-        case 6:
-          layoutType = 'hero_centered';
-          slotsCount = 1;
-          break;
-        case 7:
-          layoutType = 'split_vertical_3';
-          slotsCount = 3;
-          break;
-        case 8:
-          layoutType = 'single_full';
-          slotsCount = 1;
-          break;
-        case 9:
-          layoutType = 'hero_top_split_bottom_3';
-          slotsCount = 3;
-          break;
-        case 10:
-          layoutType = 'split_horizontal_2';
-          slotsCount = 2;
-          break;
-        case 11:
-          layoutType = 'split_vertical_2';
-          slotsCount = 2;
-          break;
-        case 12:
-          layoutType = 'hero_top_trio_4';
-          slotsCount = 4;
-          break;
-        case 13:
-          layoutType = 'editorial_quote';
-          slotsCount = 1;
-          headline = 'MEMORIES';
-          subhead = 'лучшие дни вместе';
-          break;
-        case 14:
-          layoutType = 'hero_centered';
-          slotsCount = 1;
-          break;
-        case 15:
-          layoutType = 'checkerboard_3';
-          slotsCount = 3;
-          headline = 'FOREVER';
-          subhead = 'YOUNG';
-          break;
-        case 16:
-          layoutType = 'single_full';
-          slotsCount = 1;
-          break;
-        case 17:
-          layoutType = 'split_vertical_3';
-          slotsCount = 3;
-          break;
-        case 18:
-          layoutType = 'hero_top_split_bottom_3';
-          slotsCount = 3;
-          break;
-        default:
-          layoutType = 'grid_4';
-          slotsCount = 4;
-          break;
-      }
+      // Определяем разнообразный макет в соответствии с выбранным шаблоном
+      final layoutConfig = getPageLayoutForTemplate(templateId, pageNumber);
+      final layoutType = layoutConfig['layout'] as String? ?? 'grid_4';
+      final slotsCount = (layoutConfig['slots'] as num?)?.toInt() ?? 4;
+      final headline = layoutConfig['headline'] as String?;
+      final subhead = layoutConfig['subhead'] as String?;
 
       // Для первых 18 страниц — моковая заполненность
       final isFilledPage = pageNumber <= 18;

@@ -169,7 +169,7 @@ class EditorController extends Notifier<EditorState> {
       templateId: templateId,
       aspectRatio: aspectRatio,
       spreadsCount: spreadsCount,
-      pages: MockData.generatePages(),
+      pages: MockData.generatePages(templateId: templateId),
       members: MockData.activeMembers,
       poolPhotos: MockData.poolPhotos,
       currentPageNumber: 0,
@@ -195,6 +195,7 @@ class EditorController extends Notifier<EditorState> {
       final albumName = (albumData['name'] ?? albumData['title']) as String? ?? 'Наш фотоальбом';
       final inviteCode = albumData['inviteCode'] as String? ?? '';
 
+      final templateId = albumData['templateId'] as String? ?? 'school_drive';
       final double calculatedAspectRatio = format == '20x20' ? 1.0 : (3.0 / 4.0);
 
       // Маппинг страниц и слотов из БД
@@ -253,9 +254,13 @@ class EditorController extends Notifier<EditorState> {
           );
         }).toList();
 
-        final layoutType = pMap['layoutType'] as String? ?? 'grid_4';
-        final headline = pMap['headline'] as String?;
-        final subhead = pMap['subhead'] as String?;
+        final rawLayout = pMap['layoutType'] as String?;
+        final tInfo = MockData.getPageLayoutForTemplate(templateId, pageNum);
+        final layoutType = (rawLayout != null && rawLayout != 'grid_4')
+            ? rawLayout
+            : (tInfo['layout'] as String? ?? 'grid_4');
+        final headline = (pMap['headline'] as String?) ?? (tInfo['headline'] as String?);
+        final subhead = (pMap['subhead'] as String?) ?? (tInfo['subhead'] as String?);
 
         return PageModel(
           pageNumber: pageNum,
@@ -290,7 +295,6 @@ class EditorController extends Notifier<EditorState> {
         );
       }).toList();
 
-      final templateId = albumData['templateId'] as String? ?? 'school_drive';
       final winningCoverId = albumData['winningCoverId'] as String?;
       final rawCoverVotes = (albumData['coverVotes'] as List?) ?? [];
       final Map<String, int> coverVotesMap = {};
