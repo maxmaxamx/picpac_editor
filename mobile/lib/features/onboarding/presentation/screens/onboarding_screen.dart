@@ -26,21 +26,29 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final TextEditingController _nameController =
       TextEditingController(text: 'Артём');
   final TextEditingController _pinController =
-      TextEditingController(text: '849204');
+      TextEditingController();
   final TextEditingController _albumTitleController =
       TextEditingController();
 
   OnboardingMode _mode = OnboardingMode.join;
   bool _isSubmitting = false;
   bool _isServerOnline = false;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
+    _pinController.addListener(_onPinChanged);
     if (!WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding')) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _checkServerHealth();
       });
+    }
+  }
+
+  void _onPinChanged() {
+    if (_errorMessage != null && mounted) {
+      setState(() => _errorMessage = null);
     }
   }
 
@@ -55,6 +63,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   void dispose() {
+    _pinController.removeListener(_onPinChanged);
     _nameController.dispose();
     _pinController.dispose();
     _albumTitleController.dispose();
@@ -69,12 +78,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
 
     if (_mode == OnboardingMode.join) {
-      final pin = _pinController.text.trim();
-      if (pin.length != 6) {
-        _showToast('Введите 6-значный код альбома');
-        return;
-      }
-
       if (WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding')) {
         Navigator.push<void>(
           context,
@@ -88,7 +91,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         return;
       }
 
-      setState(() => _isSubmitting = true);
+      final pin = _pinController.text.trim();
+      if (pin.length != 6) {
+        _showToast('Введите 6-значный код альбома');
+        return;
+      }
+
+      setState(() {
+        _isSubmitting = true;
+        _errorMessage = null;
+      });
+
       try {
         final apiClient = ref.read(apiClientProvider);
         final user = await apiClient.guestAuth(name);
@@ -112,20 +125,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       } catch (err) {
         if (!mounted) return;
         final apiClient = ref.read(apiClientProvider);
-        String errorMsg = 'Не удалось присоединиться к альбому';
+        String bannerMsg = 'Комната с кодом "$pin" не найдена. Проверьте правильность кода или создайте новый альбом.';
         if (err is DioException) {
           if (err.response?.statusCode == 404) {
-            errorMsg = 'Альбом с кодом $pin не найден. Проверьте код.';
+            bannerMsg = 'Комната с кодом "$pin" не найдена. Проверьте 6-значный код альбома.';
           } else if (err.type == DioExceptionType.connectionTimeout ||
               err.type == DioExceptionType.connectionError) {
-            errorMsg = 'Сервер недоступен (${apiClient.baseUrl}). Проверьте подключение.';
+            bannerMsg = 'Сервер недоступен (${apiClient.baseUrl}). Проверьте подключение в настройках.';
           } else if (err.response?.data != null &&
               err.response?.data is Map &&
               err.response?.data['error'] != null) {
-            errorMsg = err.response!.data['error'].toString();
+            bannerMsg = err.response!.data['error'].toString();
           }
         }
-        _showToast(errorMsg);
+        setState(() {
+          _errorMessage = bannerMsg;
+        });
+        _showToast(bannerMsg);
       } finally {
         if (mounted) setState(() => _isSubmitting = false);
       }
@@ -712,35 +728,79 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
           ),
 
-          const SizedBox(height: 14.0),
-
-          // Тестовый чип
-          Center(
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _pinController.text = '849204';
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10.0,
-                  vertical: 4.0,
-                ),
-                decoration: BoxDecoration(
-                  color: PicPacColors.surfaceGrey,
-                  borderRadius: BorderRadius.circular(6.0),
-                ),
-                child: Text(
-                  'Тестовый код: 849-204',
-                  style: PicPacTypography.metaInfo.copyWith(
-                    color: PicPacColors.textDark,
-                    fontWeight: FontWeight.w600,
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 16.0),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEE2E2),
+                borderRadius: BorderRadius.circular(8.0),
+                border: Border.all(color: const Color(0xFFFCA5A5)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(top: 2.0),
+                    child: Icon(
+                      LucideIcons.circleAlert,
+                      size: 18.0,
+                      color: Color(0xFFDC2626),
+                    ),
                   ),
+                  const SizedBox(width: 10.0),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Комната не найдена',
+                          style: PicPacTypography.buttonTextDark.copyWith(
+                            color: const Color(0xFFDC2626),
+                            fontSize: 13.0,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 3.0),
+                        Text(
+                          _errorMessage!,
+                          style: PicPacTypography.metaInfo.copyWith(
+                            color: const Color(0xFF991B1B),
+                            fontSize: 12.0,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => setState(() => _errorMessage = null),
+                    behavior: HitTestBehavior.opaque,
+                    child: const Padding(
+                      padding: EdgeInsets.only(left: 6.0),
+                      child: Icon(
+                        LucideIcons.x,
+                        size: 16.0,
+                        color: Color(0xFFDC2626),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 14.0),
+            Center(
+              child: Text(
+                'Введите 6 цифр кода, который вам передал организатор альбома',
+                textAlign: TextAlign.center,
+                style: PicPacTypography.metaInfo.copyWith(
+                  color: PicPacColors.textMuted,
+                  fontSize: 11.5,
                 ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
