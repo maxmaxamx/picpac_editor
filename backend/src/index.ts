@@ -5,7 +5,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { initDatabase } from './config/database.js';
-import { setupModels, sequelize } from './models/index.js';
+import { setupModels, sequelize, User, Album } from './models/index.js';
+import { createAlbumTransaction } from './services/album.service.js';
 import apiRouter from './routes/index.js';
 import { setupSocketHandlers } from './socket/index.js';
 
@@ -60,13 +61,44 @@ export async function startServer() {
     await sequelize.sync();
     console.log('✅ Схема таблиц синхронизирована (Users, Albums, Pages, Slots, MediaPool, CoverVotes)');
 
-    // 4. Запуск HTTP + WebSocket сервера
+    // 4. Гарантируем наличие базового альбома с кодом 849204 для мгновенного входа двух устройств
+    await ensureDefaultAlbum();
+
+    // 5. Запуск HTTP + WebSocket сервера
     server.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Сервер picPac.by успешно запущен на http://localhost:${PORT}`);
     });
   } catch (err) {
     console.error('❌ Фатальная ошибка запуска сервера:', err);
     process.exit(1);
+  }
+}
+
+async function ensureDefaultAlbum() {
+  try {
+    const existing = await Album.findOne({ where: { inviteCode: '849204' } });
+    if (!existing) {
+      let defaultHost = await User.findByPk('host_default_artem');
+      if (!defaultHost) {
+        defaultHost = await User.create({
+          id: 'host_default_artem',
+          displayName: 'Артём',
+          avatarColor: '#FF4D4D',
+        });
+      }
+      const album = await createAlbumTransaction({
+        title: 'Выпускной 11-Б • 2026',
+        hostUserId: defaultHost.id,
+        totalSpreads: 10,
+        format: 'vertical_21x30',
+        lamination: 'glossy',
+      });
+      album.inviteCode = '849204';
+      await album.save();
+      console.log('🎉 Создан базовый альбом для двух устройств с PIN-кодом: 849204');
+    }
+  } catch (err) {
+    console.error('Ошибка инициализации базового альбома:', err);
   }
 }
 

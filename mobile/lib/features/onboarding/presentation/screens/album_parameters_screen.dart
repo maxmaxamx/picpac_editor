@@ -93,15 +93,14 @@ class _AlbumParametersScreenState extends ConsumerState<AlbumParametersScreen> {
       );
     } catch (err) {
       if (!mounted) return;
-      Navigator.push<void>(
-        context,
-        MaterialPageRoute(
-          builder: (_) => SpreadEditorScreen(
-            albumTitle: widget.albumTitle,
-            userName: widget.userName,
-            aspectRatio: _selectedFormat.aspectRatio,
-            spreadsCount: _spreadsCount,
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Ошибка связи с сервером: $err',
+            style: PicPacTypography.buttonText.copyWith(fontSize: 13.0),
           ),
+          backgroundColor: PicPacColors.textDark,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     } finally {

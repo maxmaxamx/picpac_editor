@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -976,9 +977,14 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
+              onPressed: () {
+                final rawCode = inviteCode.isNotEmpty ? inviteCode : '849204';
+                Clipboard.setData(ClipboardData(text: rawCode));
+                Navigator.pop(dialogContext);
+                _showToast(context, 'Код $rawCode скопирован в буфер обмена!');
+              },
               child: Text(
-                'Скопировать ссылку',
+                'Скопировать код',
                 style: PicPacTypography.buttonTextDark.copyWith(
                   color: PicPacColors.primaryCoral,
                 ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/session/session_state.dart';
@@ -27,7 +28,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final TextEditingController _pinController =
       TextEditingController(text: '849204');
   final TextEditingController _albumTitleController =
-      TextEditingController(text: 'Выпускной 11-Б • 2026');
+      TextEditingController();
 
   OnboardingMode _mode = OnboardingMode.join;
   bool _isSubmitting = false;
@@ -109,26 +110,28 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
         );
       } catch (err) {
-        // Fallback gracefully (offline / widget tests / dev mock)
         if (!mounted) return;
-        Navigator.push<void>(
-          context,
-          MaterialPageRoute(
-            builder: (_) => SpreadEditorScreen(
-              albumTitle: 'Выпускной 11-Б • 2026',
-              userName: name,
-            ),
-          ),
-        );
+        final apiClient = ref.read(apiClientProvider);
+        String errorMsg = 'Не удалось присоединиться к альбому';
+        if (err is DioException) {
+          if (err.response?.statusCode == 404) {
+            errorMsg = 'Альбом с кодом $pin не найден. Проверьте код.';
+          } else if (err.type == DioExceptionType.connectionTimeout ||
+              err.type == DioExceptionType.connectionError) {
+            errorMsg = 'Сервер недоступен (${apiClient.baseUrl}). Проверьте подключение.';
+          } else if (err.response?.data != null &&
+              err.response?.data is Map &&
+              err.response?.data['error'] != null) {
+            errorMsg = err.response!.data['error'].toString();
+          }
+        }
+        _showToast(errorMsg);
       } finally {
         if (mounted) setState(() => _isSubmitting = false);
       }
     } else {
-      final title = _albumTitleController.text.trim();
-      if (title.isEmpty) {
-        _showToast('Введите название для нового альбома');
-        return;
-      }
+      final entered = _albumTitleController.text.trim();
+      final title = entered.isNotEmpty ? entered : 'Выпускной 11-Б • 2026';
       Navigator.push<void>(
         context,
         MaterialPageRoute(
@@ -772,11 +775,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ],
           ),
           const SizedBox(height: 14.0),
-          Text(
-            'Название альбома:',
-            style: PicPacTypography.metaInfo,
-          ),
-          const SizedBox(height: 6.0),
           Container(
             height: 48.0,
             decoration: BoxDecoration(
@@ -791,10 +789,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               style: PicPacTypography.photoCaption.copyWith(
                 fontWeight: FontWeight.w600,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 border: InputBorder.none,
                 isDense: true,
-                hintText: 'Например: Выпуск 11-Б • 2026',
+                hintText: 'Название альбома',
+                hintStyle: PicPacTypography.photoCaption.copyWith(
+                  color: PicPacColors.textMuted,
+                  fontWeight: FontWeight.normal,
+                ),
               ),
             ),
           ),

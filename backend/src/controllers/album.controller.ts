@@ -58,7 +58,7 @@ export async function joinAlbum(req: AuthenticatedRequest, res: Response) {
       return;
     }
 
-    const cleanCode = inviteCode.trim();
+    const cleanCode = inviteCode.replace(/\D/g, '').trim();
     const album = await Album.findOne({
       where: { inviteCode: cleanCode },
     });

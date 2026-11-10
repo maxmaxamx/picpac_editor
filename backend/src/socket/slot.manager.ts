@@ -38,7 +38,12 @@ export class SlotManager {
     slot.lockedUntil = lockedUntil;
     await slot.save();
 
-    return slot;
+    return await Slot.findByPk(slotId, {
+      include: [
+        { model: MediaPool, as: 'media' },
+        { model: SlotReaction, as: 'reactions' },
+      ],
+    });
   }
 
   /**
@@ -55,7 +60,12 @@ export class SlotManager {
       await slot.save();
     }
 
-    return slot;
+    return await Slot.findByPk(slotId, {
+      include: [
+        { model: MediaPool, as: 'media' },
+        { model: SlotReaction, as: 'reactions' },
+      ],
+    });
   }
 
   /**
@@ -131,7 +141,12 @@ export class SlotManager {
     slot.lockedUntil = null;
     await slot.save();
 
-    return slot;
+    return await Slot.findByPk(slotId, {
+      include: [
+        { model: MediaPool, as: 'media' },
+        { model: SlotReaction, as: 'reactions' },
+      ],
+    });
   }
 
   /**

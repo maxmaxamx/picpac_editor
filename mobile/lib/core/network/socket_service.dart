@@ -61,9 +61,11 @@ class SocketService {
     _currentUser = user;
 
     final options = io.OptionBuilder()
-        .setTransports(['websocket'])
+        .setTransports(['websocket', 'polling'])
         .enableAutoConnect()
         .enableReconnection()
+        .setReconnectionAttempts(10)
+        .setReconnectionDelay(1000)
         .setAuth({'token': user.token})
         .build();
 
