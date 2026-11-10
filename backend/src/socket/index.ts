@@ -214,12 +214,15 @@ export function setupSocketHandlers(io: Server) {
     // 7. Голосование за обложку
     socket.on(
       'cover:vote',
-      async ({ albumId, mediaId, user }: { albumId: string; mediaId: string; user: any }) => {
+      async ({ albumId, mediaId, slotId, user }: { albumId: string; mediaId?: string; slotId?: string; user: any }) => {
         try {
           const u = user || currentUser;
           if (!u?.userId) return;
 
-          const result = await slotManager.voteCover(albumId, mediaId, u.userId);
+          const targetMediaId = mediaId || slotId;
+          if (!targetMediaId) return;
+
+          const result = await slotManager.voteCover(albumId, targetMediaId, u.userId);
 
           io.to(albumId).emit('cover:votes_updated', result);
         } catch (err: any) {

@@ -31,12 +31,14 @@ class AlbumParametersScreen extends ConsumerStatefulWidget {
   final String albumTitle;
   final String userName;
   final String? selectedTemplateTitle;
+  final String? selectedTemplateId;
 
   const AlbumParametersScreen({
     super.key,
     required this.albumTitle,
     required this.userName,
     this.selectedTemplateTitle,
+    this.selectedTemplateId,
   });
 
   @override
@@ -59,6 +61,7 @@ class _AlbumParametersScreenState extends ConsumerState<AlbumParametersScreen> {
             userName: widget.userName,
             aspectRatio: _selectedFormat.aspectRatio,
             spreadsCount: _spreadsCount,
+            templateId: widget.selectedTemplateId ?? 'school_drive',
           ),
         ),
       );
@@ -74,6 +77,7 @@ class _AlbumParametersScreenState extends ConsumerState<AlbumParametersScreen> {
         format: _selectedFormat == AlbumFormat.square20x20 ? '20x20' : '21x30',
         lamination: _selectedLamination == AlbumLamination.glossy ? 'glossy' : 'grainy',
         spreadsCount: _spreadsCount,
+        templateId: widget.selectedTemplateId ?? 'school_drive',
       );
       ref.read(sessionProvider.notifier).setUser(user);
       ref.read(sessionProvider.notifier).setAlbum(album);
@@ -88,6 +92,7 @@ class _AlbumParametersScreenState extends ConsumerState<AlbumParametersScreen> {
             userName: user.displayName,
             aspectRatio: _selectedFormat.aspectRatio,
             spreadsCount: _spreadsCount,
+            templateId: album.templateId,
           ),
         ),
       );

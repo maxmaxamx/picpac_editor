@@ -6,6 +6,7 @@ export interface AlbumAttributes {
   inviteCode: string;
   title: string;
   hostUserId: string;
+  templateId?: string;
   format: 'square_20x20' | 'vertical_21x30';
   lamination: 'glossy' | 'grainy';
   totalSpreads: number;
@@ -23,6 +24,7 @@ export interface AlbumCreationAttributes
     | 'id'
     | 'createdAt'
     | 'updatedAt'
+    | 'templateId'
     | 'winningCoverId'
     | 'status'
     | 'copiesCount'
@@ -37,6 +39,7 @@ export class Album extends Model<AlbumAttributes, AlbumCreationAttributes> imple
   declare inviteCode: string;
   declare title: string;
   declare hostUserId: string;
+  declare templateId: string;
   declare format: 'square_20x20' | 'vertical_21x30';
   declare lamination: 'glossy' | 'grainy';
   declare totalSpreads: number;
@@ -69,6 +72,11 @@ export function initAlbumModel(): typeof Album {
       hostUserId: {
         type: DataTypes.UUID,
         allowNull: false,
+      },
+      templateId: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        defaultValue: 'school_drive',
       },
       format: {
         type: DataTypes.STRING(30),

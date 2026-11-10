@@ -24,6 +24,7 @@ class SpreadEditorScreen extends ConsumerStatefulWidget {
   final String userName;
   final double aspectRatio;
   final int spreadsCount;
+  final String templateId;
 
   const SpreadEditorScreen({
     super.key,
@@ -32,6 +33,7 @@ class SpreadEditorScreen extends ConsumerStatefulWidget {
     this.userName = 'Артём',
     this.aspectRatio = 3.0 / 4.0,
     this.spreadsCount = 10,
+    this.templateId = 'school_drive',
   });
 
   @override
@@ -59,6 +61,7 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
       } else {
         ref.read(editorControllerProvider.notifier).initMock(
               albumTitle: widget.albumTitle,
+              templateId: widget.templateId,
               aspectRatio: widget.aspectRatio,
               spreadsCount: widget.spreadsCount,
             );
@@ -791,9 +794,6 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
 
   /// Голосование за обложку книги
   void _openCoverVotingSheet() {
-    final pool = ref.read(editorControllerProvider).poolPhotos;
-    final photosList = pool.isNotEmpty ? pool : MockData.poolPhotos;
-
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -804,7 +804,13 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
-            final activePhoto = photosList[_selectedCoverPhotoIndex.clamp(0, photosList.length - 1)];
+            final editorState = ref.watch(editorControllerProvider);
+            final pool = editorState.poolPhotos;
+            final photosList = pool.isNotEmpty ? pool : MockData.poolPhotos;
+            final safeIndex = _selectedCoverPhotoIndex.clamp(0, photosList.length - 1);
+            final activePhoto = photosList[safeIndex];
+            final photoVotes = editorState.coverVotes[activePhoto.id] ?? 0;
+            final isLeader = editorState.winningCoverPhoto?.id == activePhoto.id;
 
             return SafeArea(
               child: Padding(
@@ -824,55 +830,166 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
                         ),
                       ),
                     ),
-                    Text(
-                      '👑 Голосование за обложку альбома',
-                      style: PicPacTypography.h2Section,
+                    Row(
+                      children: [
+                        const Icon(LucideIcons.crown, color: Color(0xFFF59E0B), size: 22.0),
+                        const SizedBox(width: 8.0),
+                        Expanded(
+                          child: Text(
+                            'Голосование за обложку',
+                            style: PicPacTypography.h2Section,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                          decoration: BoxDecoration(
+                            color: PicPacColors.primaryCoralSoft,
+                            borderRadius: BorderRadius.circular(12.0),
+                          ),
+                          child: Text(
+                            'Всего: ${editorState.totalCoverVotes}',
+                            style: PicPacTypography.metaInfo.copyWith(
+                              color: PicPacColors.primaryCoral,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8.0),
+                    const SizedBox(height: 6.0),
                     Text(
-                      'Выберите фотографию, которая украсит твердый переплет книги:',
+                      'Выберите фото, которое станет лицом альбома всего класса:',
                       style: PicPacTypography.photoCaption.copyWith(
                         color: PicPacColors.textMuted,
                       ),
                     ),
                     const SizedBox(height: 16.0),
-                    SizedBox(
-                      height: 180.0,
-                      child: PicPacImage(
-                        imageUrl: activePhoto.imageUrl,
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
+                    Stack(
+                      children: [
+                        SizedBox(
+                          height: 200.0,
+                          width: double.infinity,
+                          child: PicPacImage(
+                            imageUrl: activePhoto.imageUrl,
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                        ),
+                        if (isLeader)
+                          Positioned(
+                            top: 10.0,
+                            left: 10.0,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF59E0B),
+                                borderRadius: BorderRadius.circular(8.0),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.18),
+                                    blurRadius: 4.0,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(LucideIcons.crown, size: 14.0, color: Colors.white),
+                                  const SizedBox(width: 4.0),
+                                  Text(
+                                    'Лидер голосования',
+                                    style: PicPacTypography.metaInfo.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        Positioned(
+                          bottom: 10.0,
+                          right: 10.0,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.7),
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(LucideIcons.heart, size: 13.0, color: PicPacColors.primaryCoral),
+                                const SizedBox(width: 4.0),
+                                Text(
+                                  '$photoVotes голосов',
+                                  style: PicPacTypography.metaInfo.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12.0),
                     // Карусель миниатюр кандидатов на обложку
                     SizedBox(
-                      height: 54.0,
+                      height: 60.0,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: photosList.length,
                         separatorBuilder: (context, index) => const SizedBox(width: 8.0),
                         itemBuilder: (ctx, idx) {
                           final p = photosList[idx];
-                          final isCurrent = idx == _selectedCoverPhotoIndex;
+                          final isCurrent = idx == safeIndex;
+                          final vCount = editorState.coverVotes[p.id] ?? 0;
                           return GestureDetector(
                             onTap: () {
                               setSheetState(() {
                                 _selectedCoverPhotoIndex = idx;
                               });
                             },
-                            child: Container(
-                              width: 54.0,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(6.0),
-                                border: Border.all(
-                                  color: isCurrent ? PicPacColors.primaryCoral : PicPacColors.borderDefault,
-                                  width: isCurrent ? 2.0 : 1.0,
+                            child: Stack(
+                              children: [
+                                Container(
+                                  width: 60.0,
+                                  height: 60.0,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                    border: Border.all(
+                                      color: isCurrent ? PicPacColors.primaryCoral : PicPacColors.borderDefault,
+                                      width: isCurrent ? 2.5 : 1.0,
+                                    ),
+                                  ),
+                                  child: PicPacImage(
+                                    imageUrl: p.imageUrl,
+                                    borderRadius: BorderRadius.circular(6.0),
+                                  ),
                                 ),
-                              ),
-                              child: PicPacImage(
-                                imageUrl: p.imageUrl,
-                                borderRadius: BorderRadius.circular(5.0),
-                              ),
+                                if (vCount > 0)
+                                  Positioned(
+                                    top: 3.0,
+                                    right: 3.0,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withValues(alpha: 0.7),
+                                        borderRadius: BorderRadius.circular(4.0),
+                                      ),
+                                      child: Text(
+                                        '$vCount',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 9.0,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           );
                         },
@@ -881,23 +998,34 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
                     const SizedBox(height: 16.0),
                     GestureDetector(
                       onTap: () {
+                        ref.read(editorControllerProvider.notifier).voteCover(activePhoto.id);
                         Navigator.pop(sheetContext);
-                        final state = ref.read(editorControllerProvider);
-                        if (state.selectedSlotId != null) {
-                          ref.read(editorControllerProvider.notifier).voteCover(state.selectedSlotId!);
-                        }
                         _showToast(context, 'Ваш голос за обложку альбома сохранен!');
                       },
                       child: Container(
-                        height: 44.0,
+                        height: 46.0,
                         decoration: BoxDecoration(
                           color: PicPacColors.primaryCoral,
                           borderRadius: BorderRadius.circular(8.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: PicPacColors.primaryCoral.withValues(alpha: 0.25),
+                              blurRadius: 8.0,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
                         ),
                         alignment: Alignment.center,
-                        child: Text(
-                          'Голосовать за этот вариант',
-                          style: PicPacTypography.buttonText,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(LucideIcons.heart, size: 16.0, color: Colors.white),
+                            const SizedBox(width: 8.0),
+                            Text(
+                              'Голосовать за этот вариант',
+                              style: PicPacTypography.buttonText,
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -1069,6 +1197,12 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
                 onPageChange: _onPageSelected,
                 onSlotTap: _onSlotTap,
                 aspectRatio: widget.aspectRatio,
+                templateId: editorState.templateId,
+                albumTitle: title,
+                winningPhoto: editorState.winningCoverPhoto,
+                votesCount: editorState.coverVotes[editorState.winningCoverPhoto?.id] ?? 0,
+                totalVotes: editorState.totalCoverVotes,
+                onVoteTap: _openCoverVotingSheet,
               ),
             ),
 
@@ -1084,7 +1218,7 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
             Zone5BottomDock(
               filledPagesCount: filledPagesCount,
               totalPagesCount: pages.length,
-              coverVotesCount: 5,
+              coverVotesCount: editorState.totalCoverVotes,
               onCoverTap: _openCoverVotingSheet,
               onLayoutTap: _openLayoutSelectorSheet,
               onOrderTap: _openOrderSheet,

@@ -9,11 +9,13 @@ import '../../domain/models.dart';
 class Zone3SlotWidget extends StatelessWidget {
   final SlotModel slot;
   final VoidCallback onTap;
+  final double borderRadius;
 
   const Zone3SlotWidget({
     super.key,
     required this.slot,
     required this.onTap,
+    this.borderRadius = 6.0,
   });
 
   @override
@@ -46,7 +48,7 @@ class Zone3SlotWidget extends StatelessWidget {
       strokeWidth: 1.0,
       dashLength: 4.0,
       dashGap: 4.0,
-      borderRadius: 6.0,
+      borderRadius: borderRadius,
       backgroundColor: PicPacColors.surfaceGrey,
       child: Center(
         child: Padding(
@@ -81,7 +83,7 @@ class Zone3SlotWidget extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: PicPacColors.primaryCoralSoft,
-        borderRadius: BorderRadius.circular(6.0),
+        borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
           color: PicPacColors.primaryCoral,
           width: 2.0,
@@ -126,7 +128,7 @@ class Zone3SlotWidget extends StatelessWidget {
       strokeWidth: 1.0,
       dashLength: 4.0,
       dashGap: 4.0,
-      borderRadius: 6.0,
+      borderRadius: borderRadius,
       backgroundColor: PicPacColors.surfaceGrey,
       child: Center(
         child: Padding(
@@ -182,7 +184,7 @@ class Zone3SlotWidget extends StatelessWidget {
             children: [
               PicPacImage(
                 imageUrl: slot.imageUrl,
-                borderRadius: BorderRadius.circular(6.0),
+                borderRadius: BorderRadius.circular(borderRadius),
               ),
 
               // Капсула реакций в правом нижнем углу фото

@@ -135,6 +135,12 @@ class SocketService {
         _pageUpdatedController.add(Map<String, dynamic>.from(data));
       }
     });
+
+    socket.on('cover:votes_updated', (data) {
+      if (data is Map) {
+        _coverVotedController.add(Map<String, dynamic>.from(data));
+      }
+    });
   }
 
   void clearMedia(String slotId) {
@@ -227,11 +233,12 @@ class SocketService {
     });
   }
 
-  void voteCover(String slotId) {
+  void voteCover({required String mediaId}) {
     if (_socket == null || _currentAlbumId == null || _currentUser == null) return;
     _socket!.emit('cover:vote', {
       'albumId': _currentAlbumId,
-      'slotId': slotId,
+      'mediaId': mediaId,
+      'slotId': mediaId,
       'user': {
         'userId': _currentUser!.userId,
         'displayName': _currentUser!.displayName,

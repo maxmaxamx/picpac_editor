@@ -19,6 +19,10 @@ class EditorState {
   final int currentPageNumber;
   final String? selectedSlotId;
   final bool isSocketConnected;
+  final String templateId;
+  final String? winningCoverId;
+  final Map<String, int> coverVotes;
+  final int totalCoverVotes;
 
   const EditorState({
     this.isLoading = false,
@@ -31,12 +35,19 @@ class EditorState {
     this.pages = const [],
     this.members = const [],
     this.poolPhotos = const [],
-    this.currentPageNumber = 1,
+    this.currentPageNumber = 0, // Страница 0 — Обложка альбома по умолчанию
     this.selectedSlotId,
     this.isSocketConnected = false,
+    this.templateId = 'school_drive',
+    this.winningCoverId,
+    this.coverVotes = const {},
+    this.totalCoverVotes = 0,
   });
 
   PageModel get currentPage {
+    if (currentPageNumber == 0) {
+      return const PageModel(pageNumber: 0, side: 'cover', slots: []);
+    }
     if (pages.isEmpty) {
       return const PageModel(pageNumber: 1, side: 'left', slots: []);
     }
@@ -44,6 +55,29 @@ class EditorState {
       (p) => p.pageNumber == currentPageNumber,
       orElse: () => pages.first,
     );
+  }
+
+  MediaPoolItem? get winningCoverPhoto {
+    if (poolPhotos.isEmpty) return null;
+    if (winningCoverId != null) {
+      final match = poolPhotos.where((p) => p.id == winningCoverId);
+      if (match.isNotEmpty) return match.first;
+    }
+    if (coverVotes.isNotEmpty) {
+      String? topId;
+      int topVotes = 0;
+      coverVotes.forEach((mId, count) {
+        if (count > topVotes) {
+          topVotes = count;
+          topId = mId;
+        }
+      });
+      if (topId != null) {
+        final match = poolPhotos.where((p) => p.id == topId);
+        if (match.isNotEmpty) return match.first;
+      }
+    }
+    return poolPhotos.first;
   }
 
   int get filledPagesCount =>
@@ -64,6 +98,10 @@ class EditorState {
     String? selectedSlotId,
     bool clearSelectedSlot = false,
     bool? isSocketConnected,
+    String? templateId,
+    String? winningCoverId,
+    Map<String, int>? coverVotes,
+    int? totalCoverVotes,
   }) {
     return EditorState(
       isLoading: isLoading ?? this.isLoading,
@@ -79,6 +117,10 @@ class EditorState {
       currentPageNumber: currentPageNumber ?? this.currentPageNumber,
       selectedSlotId: clearSelectedSlot ? null : (selectedSlotId ?? this.selectedSlotId),
       isSocketConnected: isSocketConnected ?? this.isSocketConnected,
+      templateId: templateId ?? this.templateId,
+      winningCoverId: winningCoverId ?? this.winningCoverId,
+      coverVotes: coverVotes ?? this.coverVotes,
+      totalCoverVotes: totalCoverVotes ?? this.totalCoverVotes,
     );
   }
 }
@@ -87,6 +129,7 @@ class EditorController extends Notifier<EditorState> {
   StreamSubscription? _presenceSub;
   StreamSubscription? _slotUpdatedSub;
   StreamSubscription? _reactionsUpdatedSub;
+  StreamSubscription? _coverVotedSub;
   StreamSubscription? _mediaAddedSub;
   StreamSubscription? _pageUpdatedSub;
   StreamSubscription? _connectionSub;
@@ -108,6 +151,7 @@ class EditorController extends Notifier<EditorState> {
     _presenceSub?.cancel();
     _slotUpdatedSub?.cancel();
     _reactionsUpdatedSub?.cancel();
+    _coverVotedSub?.cancel();
     _mediaAddedSub?.cancel();
     _pageUpdatedSub?.cancel();
     _connectionSub?.cancel();
@@ -116,17 +160,19 @@ class EditorController extends Notifier<EditorState> {
   /// Инициализация с моковыми данными (для автономной работы и тестов)
   void initMock({
     String albumTitle = 'Выпускной 11-Б • 2026',
+    String templateId = 'school_drive',
     double aspectRatio = 3.0 / 4.0,
     int spreadsCount = 10,
   }) {
     state = state.copyWith(
       albumTitle: albumTitle,
+      templateId: templateId,
       aspectRatio: aspectRatio,
       spreadsCount: spreadsCount,
       pages: MockData.generatePages(),
       members: MockData.activeMembers,
       poolPhotos: MockData.poolPhotos,
-      currentPageNumber: 4,
+      currentPageNumber: 0,
       selectedSlotId: 'slot_4_1',
     );
   }
@@ -237,16 +283,34 @@ class EditorController extends Notifier<EditorState> {
         );
       }).toList();
 
+      final templateId = albumData['templateId'] as String? ?? 'school_drive';
+      final winningCoverId = albumData['winningCoverId'] as String?;
+      final rawCoverVotes = (albumData['coverVotes'] as List?) ?? [];
+      final Map<String, int> coverVotesMap = {};
+      for (final v in rawCoverVotes) {
+        if (v is Map) {
+          final mId = v['mediaId'] as String?;
+          if (mId != null) {
+            coverVotesMap[mId] = (coverVotesMap[mId] ?? 0) + 1;
+          }
+        }
+      }
+      final totalCoverVotes = coverVotesMap.values.fold<int>(0, (sum, count) => sum + count);
+
       state = state.copyWith(
         isLoading: false,
         albumTitle: albumName,
+        templateId: templateId,
+        winningCoverId: winningCoverId,
+        coverVotes: coverVotesMap,
+        totalCoverVotes: totalCoverVotes,
         inviteCode: inviteCode,
         aspectRatio: calculatedAspectRatio,
         spreadsCount: spreadsCount,
         pages: mappedPages.isNotEmpty ? mappedPages : MockData.generatePages(),
         members: mappedMembers.isNotEmpty ? mappedMembers : MockData.activeMembers,
         poolPhotos: mappedPool,
-        currentPageNumber: 1,
+        currentPageNumber: 0,
       );
 
       // Подключаем Socket.io Realtime
@@ -330,6 +394,26 @@ class EditorController extends Notifier<EditorState> {
         final slotsCount = layout == 'single' ? 1 : (layout == 'split_2' ? 2 : 4);
         _applyPageLayoutLocal(pageNum, slotsCount);
       }
+    });
+
+    // Слушаем обновление голосования за обложку
+    _coverVotedSub = _socketService.coverVotedStream.listen((data) {
+      final rawVotes = data['votes'];
+      final winningId = data['winningCoverId'] as String?;
+      final Map<String, int> votesMap = {};
+      if (rawVotes is Map) {
+        rawVotes.forEach((key, val) {
+          if (val is num) {
+            votesMap[key.toString()] = val.toInt();
+          }
+        });
+      }
+      final total = votesMap.values.fold<int>(0, (sum, c) => sum + c);
+      state = state.copyWith(
+        coverVotes: votesMap.isNotEmpty ? votesMap : state.coverVotes,
+        totalCoverVotes: total > 0 ? total : state.totalCoverVotes,
+        winningCoverId: winningId ?? state.winningCoverId,
+      );
     });
   }
 
@@ -490,9 +574,6 @@ class EditorController extends Notifier<EditorState> {
     state = state.copyWith(pages: updatedPages);
   }
 
-  void voteCover(String slotId) {
-    _socketService.voteCover(slotId);
-  }
 
   void clearSlot(String slotId) {
     // 1. WebSocket sync
@@ -641,6 +722,31 @@ class EditorController extends Notifier<EditorState> {
     } catch (e) {
       state = state.copyWith(errorMessage: 'Ошибка загрузки фото: $e');
     }
+  }
+
+  /// Голосование за фото обложки альбома
+  void voteCover(String mediaId) {
+    final currentCount = state.coverVotes[mediaId] ?? 0;
+    final updatedMap = Map<String, int>.from(state.coverVotes);
+    updatedMap[mediaId] = currentCount + 1;
+    final newTotal = state.totalCoverVotes + 1;
+
+    String? newLeader = state.winningCoverId;
+    int maxV = 0;
+    updatedMap.forEach((mId, cnt) {
+      if (cnt > maxV) {
+        maxV = cnt;
+        newLeader = mId;
+      }
+    });
+
+    state = state.copyWith(
+      coverVotes: updatedMap,
+      totalCoverVotes: newTotal,
+      winningCoverId: newLeader,
+    );
+
+    _socketService.voteCover(mediaId: mediaId);
   }
 
   void _updateSlotLocalStatus(String slotId, SlotStatus status) {

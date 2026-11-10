@@ -37,18 +37,22 @@ class AlbumData {
   final String name;
   final String format;
   final String lamination;
+  final String templateId;
   final int spreadsCount;
   final String inviteCode;
   final String status;
+  final String? winningCoverId;
 
   const AlbumData({
     required this.id,
     required this.name,
     required this.format,
     required this.lamination,
+    this.templateId = 'school_drive',
     required this.spreadsCount,
     required this.inviteCode,
     required this.status,
+    this.winningCoverId,
   });
 
   factory AlbumData.fromJson(Map<String, dynamic> json) {
@@ -57,9 +61,11 @@ class AlbumData {
       name: (json['title'] ?? json['name']) as String? ?? 'Наш фотоальбом',
       format: (json['format'] as String?) ?? 'vertical_21x30',
       lamination: (json['lamination'] as String?) ?? 'glossy',
+      templateId: (json['templateId'] as String?) ?? 'school_drive',
       spreadsCount: (json['totalSpreads'] ?? json['spreadsCount'] as num?)?.toInt() ?? 10,
       inviteCode: json['inviteCode'] as String? ?? '',
       status: json['status'] as String? ?? 'draft',
+      winningCoverId: json['winningCoverId'] as String?,
     );
   }
 }
@@ -138,12 +144,14 @@ class ApiClient {
     required String format,
     required String lamination,
     required int spreadsCount,
+    String? templateId,
   }) async {
     final response = await _dio.post(
       '/api/albums',
       data: {
         'title': name.trim(),
         'name': name.trim(),
+        'templateId': templateId ?? 'school_drive',
         'format': format,
         'lamination': lamination,
         'totalSpreads': spreadsCount,

@@ -17,8 +17,70 @@ class Zone3FloatingPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // В типографии книги разворот состоит из левой (четной) и правой (нечетной) страниц:
-    // Например, страницы 4 и 5.
+    if (currentPage == 0) {
+      return Container(
+        height: 36.0,
+        padding: const EdgeInsets.symmetric(horizontal: 14.0),
+        decoration: BoxDecoration(
+          color: PicPacColors.textDark,
+          borderRadius: BorderRadius.circular(20.0),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x26000000),
+              blurRadius: 10.0,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('👑', style: TextStyle(fontSize: 13.0)),
+            const SizedBox(width: 6.0),
+            Text(
+              'Обложка альбома',
+              style: PicPacTypography.buttonText.copyWith(
+                fontSize: 12.0,
+                fontWeight: FontWeight.w700,
+                color: PicPacColors.white,
+              ),
+            ),
+            const SizedBox(width: 10.0),
+            Container(
+              width: 1.0,
+              height: 14.0,
+              color: PicPacColors.white.withValues(alpha: 0.2),
+            ),
+            const SizedBox(width: 8.0),
+            GestureDetector(
+              onTap: () => onPageChange(1),
+              behavior: HitTestBehavior.opaque,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Стр. 1',
+                    style: PicPacTypography.buttonText.copyWith(
+                      fontSize: 12.0,
+                      fontWeight: FontWeight.w500,
+                      color: PicPacColors.primaryCoral,
+                    ),
+                  ),
+                  const SizedBox(width: 4.0),
+                  const Icon(
+                    LucideIcons.chevronRight,
+                    size: 14.0,
+                    color: PicPacColors.primaryCoral,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // В типографии книги разворот состоит из левой (четной) и правой (нечетной) страниц
     final int leftPage = currentPage % 2 == 0 ? currentPage : currentPage - 1;
     final int rightPage = leftPage + 1;
 
@@ -44,10 +106,14 @@ class Zone3FloatingPill extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Левая страница
+            // Левая страница / Обложка
             GestureDetector(
               onTap: () {
-                if (leftPage >= 1) onPageChange(leftPage);
+                if (currentPage == 1) {
+                  onPageChange(0);
+                } else if (leftPage >= 1) {
+                  onPageChange(leftPage);
+                }
               },
               behavior: HitTestBehavior.opaque,
               child: Padding(
@@ -64,7 +130,7 @@ class Zone3FloatingPill extends StatelessWidget {
                     ),
                     const SizedBox(width: 4.0),
                     Text(
-                      'Левая (Стр. $leftPage)',
+                      currentPage == 1 ? '👑 Обложка' : 'Левая (Стр. $leftPage)',
                       style: PicPacTypography.buttonText.copyWith(
                         fontSize: 12.0,
                         fontWeight:

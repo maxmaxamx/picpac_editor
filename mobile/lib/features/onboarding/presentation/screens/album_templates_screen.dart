@@ -117,6 +117,7 @@ class _AlbumTemplatesScreenState extends State<AlbumTemplatesScreen> {
           albumTitle: widget.albumTitle,
           userName: widget.userName,
           selectedTemplateTitle: _selectedTemplate.title,
+          selectedTemplateId: _selectedTemplate.id,
         ),
       ),
     );

@@ -51,11 +51,25 @@ class _Zone2PageMinimapState extends State<Zone2PageMinimap> {
   void _scrollToPage(int pageNumber, {required bool animate}) {
     if (!_scrollController.hasClients) return;
 
-    final index = widget.pages.indexWhere((p) => p.pageNumber == pageNumber);
-    if (index == -1) return;
+    if (pageNumber == 0) {
+      if (animate) {
+        _scrollController.animateTo(
+          0.0,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeInOutCubic,
+        );
+      } else {
+        _scrollController.jumpTo(0.0);
+      }
+      return;
+    }
+
+    final pageIndex = widget.pages.indexWhere((p) => p.pageNumber == pageNumber);
+    if (pageIndex == -1) return;
+    final totalIndex = pageIndex + 1; // Учитываем плашку обложки на позиции 0
 
     final itemStride = _itemWidth + _itemSpacing;
-    final itemCenter = _horizontalPadding + (index * itemStride) + (_itemWidth / 2);
+    final itemCenter = _horizontalPadding + (totalIndex * itemStride) + (_itemWidth / 2);
     final viewportWidth = _scrollController.position.viewportDimension;
     final targetOffset = itemCenter - (viewportWidth / 2);
 
@@ -92,13 +106,66 @@ class _Zone2PageMinimapState extends State<Zone2PageMinimap> {
         controller: _scrollController,
         padding: const EdgeInsets.symmetric(
           horizontal: _horizontalPadding,
-          vertical: 4.0,
+          vertical: 2.0,
         ),
         scrollDirection: Axis.horizontal,
-        itemCount: widget.pages.length,
+        itemCount: widget.pages.length + 1, // +1 для первой плашки "Обложка"
         separatorBuilder: (context, index) => const SizedBox(width: _itemSpacing),
         itemBuilder: (context, index) {
-          final page = widget.pages[index];
+          // Позиция 0 — Обложка альбома
+          if (index == 0) {
+            final isSelected = widget.currentPage == 0;
+            return GestureDetector(
+              onTap: () => widget.onPageSelected(0),
+              behavior: HitTestBehavior.opaque,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: _itemWidth + 8.0,
+                decoration: BoxDecoration(
+                  color: isSelected ? PicPacColors.white : PicPacColors.surfaceGrey,
+                  borderRadius: BorderRadius.circular(6.0),
+                  border: Border.all(
+                    color: isSelected
+                        ? PicPacColors.primaryCoral
+                        : PicPacColors.borderDefault,
+                    width: isSelected ? 1.5 : 1.0,
+                  ),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '👑 Обложка',
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight:
+                              isSelected ? FontWeight.w700 : FontWeight.w600,
+                          color: isSelected
+                              ? PicPacColors.primaryCoral
+                              : PicPacColors.textDark,
+                        ),
+                      ),
+                      const SizedBox(height: 1.0),
+                      Container(
+                        width: 14.0,
+                        height: 2.0,
+                        decoration: BoxDecoration(
+                          color: isSelected ? PicPacColors.primaryCoral : PicPacColors.borderDashed,
+                          borderRadius: BorderRadius.circular(1.0),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
+          // Страницы 1..totalPages
+          final page = widget.pages[index - 1];
           final isSelected = page.pageNumber == widget.currentPage;
 
           return GestureDetector(

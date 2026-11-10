@@ -12,6 +12,7 @@ export function generateInviteCode(): string {
 export interface CreateAlbumDTO {
   title: string;
   hostUserId: string;
+  templateId?: string;
   format?: 'square_20x20' | 'vertical_21x30';
   lamination?: 'glossy' | 'grainy';
   totalSpreads?: number;
@@ -29,6 +30,7 @@ export async function createAlbumTransaction(dto: CreateAlbumDTO) {
         inviteCode,
         title: dto.title,
         hostUserId: dto.hostUserId,
+        templateId: dto.templateId || 'school_drive',
         format: dto.format || 'vertical_21x30',
         lamination: dto.lamination || 'glossy',
         totalSpreads,

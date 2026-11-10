@@ -17,6 +17,8 @@ export async function createAlbum(req: AuthenticatedRequest, res: Response) {
     const lamination = req.body.lamination || 'glossy';
     const totalSpreads = req.body.totalSpreads || req.body.spreadsCount || 10;
 
+    const templateId = req.body.templateId || 'school_drive';
+
     if (!title || title.length === 0) {
       res.status(400).json({ error: 'Поле title/name обязательно' });
       return;
@@ -25,6 +27,7 @@ export async function createAlbum(req: AuthenticatedRequest, res: Response) {
     const album = await createAlbumTransaction({
       title,
       hostUserId: userId,
+      templateId,
       format,
       lamination,
       totalSpreads: Number(totalSpreads),

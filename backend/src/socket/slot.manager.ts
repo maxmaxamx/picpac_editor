@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { Slot, SlotReaction, CoverVote, MediaPool } from '../models/index.js';
+import { Slot, SlotReaction, CoverVote, MediaPool, Album } from '../models/index.js';
 
 export interface UserContext {
   userId: string;
@@ -215,7 +215,26 @@ export class SlotManager {
       voteCounts[v.mediaId] = (voteCounts[v.mediaId] || 0) + 1;
     }
 
-    return { albumId, votes: voteCounts, totalVotes: allVotes.length };
+    // Определяем победителя (фото с максимальным числом голосов)
+    let winningCoverId: string | null = null;
+    let maxVotes = 0;
+    for (const [mId, count] of Object.entries(voteCounts)) {
+      if (count > maxVotes) {
+        maxVotes = count;
+        winningCoverId = mId;
+      }
+    }
+
+    if (winningCoverId) {
+      await Album.update({ winningCoverId }, { where: { id: albumId } });
+    }
+
+    return {
+      albumId,
+      votes: voteCounts,
+      totalVotes: allVotes.length,
+      winningCoverId,
+    };
   }
 }
 

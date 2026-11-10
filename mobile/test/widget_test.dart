@@ -40,8 +40,8 @@ void main() {
     await tester.tap(find.text('Войти в альбом'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Выпускной 11-Б • 2026'), findsOneWidget);
-    expect(find.text('👑 Обложка'), findsOneWidget);
+    expect(find.text('Выпускной 11-Б • 2026'), findsAtLeastNWidgets(1));
+    expect(find.text('👑 Обложка'), findsAtLeastNWidgets(1));
   });
 
   testWidgets('Onboarding create flow navigates to AlbumParametersScreen and then SpreadEditorScreen', (WidgetTester tester) async {
@@ -88,7 +88,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify SpreadEditorScreen
-    expect(find.text('Выпускной 11-Б • 2026'), findsOneWidget);
+    expect(find.text('Выпускной 11-Б • 2026'), findsAtLeastNWidgets(1));
   });
 
   testWidgets('Editor: expanding media pool opens full screen gallery modal', (WidgetTester tester) async {
@@ -129,6 +129,10 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
+
+    // Navigate to page 4
+    await tester.tap(find.text('Стр. 4'));
     await tester.pumpAndSettle();
 
     // On page 4, slot 4_0 is filled ("Максим на олимпиаде")

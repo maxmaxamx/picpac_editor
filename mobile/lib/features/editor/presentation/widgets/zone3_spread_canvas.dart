@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/picpac_colors.dart';
 import '../../../../core/widgets/dashed_border_box.dart';
+import '../../domain/album_template_style.dart';
 import '../../domain/models.dart';
+import 'zone3_cover_widget.dart';
 import 'zone3_floating_pill.dart';
 import 'zone3_slot_widget.dart';
 
@@ -11,6 +12,12 @@ class Zone3SpreadCanvas extends StatelessWidget {
   final ValueChanged<int> onPageChange;
   final ValueChanged<SlotModel> onSlotTap;
   final double aspectRatio;
+  final String templateId;
+  final String albumTitle;
+  final MediaPoolItem? winningPhoto;
+  final int votesCount;
+  final int totalVotes;
+  final VoidCallback? onVoteTap;
 
   const Zone3SpreadCanvas({
     super.key,
@@ -19,10 +26,51 @@ class Zone3SpreadCanvas extends StatelessWidget {
     required this.onPageChange,
     required this.onSlotTap,
     this.aspectRatio = 3.0 / 4.0,
+    this.templateId = 'school_drive',
+    this.albumTitle = 'Выпускной альбом',
+    this.winningPhoto,
+    this.votesCount = 0,
+    this.totalVotes = 0,
+    this.onVoteTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final style = AlbumTemplateStyle.fromId(templateId);
+
+    // 1. Первая страница в редакторе — Презентация твердой обложки (Cover)
+    if (page.pageNumber == 0) {
+      return Container(
+        width: double.infinity,
+        height: double.infinity,
+        color: style.canvasBackgroundColor,
+        child: Column(
+          children: [
+            Expanded(
+              child: Zone3CoverWidget(
+                albumTitle: albumTitle,
+                templateId: templateId,
+                winningPhoto: winningPhoto,
+                votesCount: votesCount,
+                totalVotes: totalVotes,
+                onVoteTap: onVoteTap ?? () {},
+                onOpenPagesTap: () => onPageChange(1),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Zone3FloatingPill(
+                currentPage: 0,
+                totalPages: totalPages,
+                onPageChange: onPageChange,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 2. Внутренние страницы книги (Развороты со слотами), оформленные по стилю выбранного шаблона
     return LayoutBuilder(
       builder: (context, constraints) {
         // Доступное пространство
@@ -48,11 +96,11 @@ class Zone3SpreadCanvas extends StatelessWidget {
         return Container(
           width: double.infinity,
           height: constraints.maxHeight,
-          color: PicPacColors.surfaceGrey,
+          color: style.canvasBackgroundColor,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Белый лист фотокниги с поддержкой горизонтального свайпа
+              // Лист фотокниги в стилистике шаблона с поддержкой горизонтального свайпа
               GestureDetector(
                 onHorizontalDragEnd: (details) {
                   if (details.primaryVelocity != null) {
@@ -60,9 +108,8 @@ class Zone3SpreadCanvas extends StatelessWidget {
                         page.pageNumber < totalPages) {
                       // Свайп влево -> следующая страница
                       onPageChange(page.pageNumber + 1);
-                    } else if (details.primaryVelocity! > 200 &&
-                        page.pageNumber > 1) {
-                      // Свайп вправо -> предыдущая страница
+                    } else if (details.primaryVelocity! > 200) {
+                      // Свайп вправо -> предыдущая страница (если страница 1, возврат на обложку 0)
                       onPageChange(page.pageNumber - 1);
                     }
                   }
@@ -71,21 +118,48 @@ class Zone3SpreadCanvas extends StatelessWidget {
                   width: sheetWidth,
                   height: sheetHeight,
                   decoration: BoxDecoration(
-                    color: PicPacColors.white,
+                    color: style.sheetBackgroundColor,
                     borderRadius: BorderRadius.circular(4.0),
-                    boxShadow: const [
+                    border: Border.all(
+                      color: style.sheetBorderColor.withValues(alpha: 0.4),
+                      width: 1.0,
+                    ),
+                    boxShadow: [
                       BoxShadow(
-                        color: Color(0x12000000), // 7% черного по спецификации
-                        blurRadius: 24.0,
-                        spreadRadius: 0.0,
-                        offset: Offset(0, 8),
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 20.0,
+                        offset: const Offset(0, 6),
                       ),
                     ],
                   ),
                   child: Stack(
                     children: [
+                      // Фоновый стикер/водяной знак выбранного шаблона вверху страницы
+                      Positioned(
+                        right: 14.0,
+                        top: 10.0,
+                        child: Opacity(
+                          opacity: 0.45,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(style.icon, size: 11.0, color: style.accentColor),
+                              const SizedBox(width: 4.0),
+                              Text(
+                                '${style.fontTag} • СТР. ${page.pageNumber}',
+                                style: TextStyle(
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.6,
+                                  color: style.accentColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
                       // Полиграфическая линия безопасности (Print Safe Zone):
-                      // Внутри белого листа на расстоянии 6px от края, 1px dashed #FF4D4D с opacity: 0.35
                       Positioned(
                         left: 6.0,
                         top: 6.0,
@@ -93,7 +167,7 @@ class Zone3SpreadCanvas extends StatelessWidget {
                         bottom: 6.0,
                         child: IgnorePointer(
                           child: DashedBorderBox(
-                            color: PicPacColors.primaryCoral.withValues(alpha: 0.35),
+                            color: style.safeZoneColor.withValues(alpha: 0.35),
                             strokeWidth: 1.0,
                             dashLength: 4.0,
                             dashGap: 4.0,
@@ -104,8 +178,8 @@ class Zone3SpreadCanvas extends StatelessWidget {
 
                       // Сетка слотов в зависимости от выбранного лейаута (1, 2, 3 или 4 слота)
                       Padding(
-                        padding: const EdgeInsets.all(14.0),
-                        child: _buildDynamicLayout(),
+                        padding: const EdgeInsets.fromLTRB(14.0, 24.0, 14.0, 14.0),
+                        child: _buildDynamicLayout(style.slotBorderRadius),
                       ),
                     ],
                   ),
@@ -127,7 +201,7 @@ class Zone3SpreadCanvas extends StatelessWidget {
     );
   }
 
-  Widget _buildDynamicLayout() {
+  Widget _buildDynamicLayout(double slotRadius) {
     final slots = page.slots;
 
     if (slots.length <= 1) {
@@ -136,6 +210,7 @@ class Zone3SpreadCanvas extends StatelessWidget {
       return Zone3SlotWidget(
         slot: slot0,
         onTap: () => onSlotTap(slot0),
+        borderRadius: slotRadius,
       );
     }
 
@@ -147,13 +222,15 @@ class Zone3SpreadCanvas extends StatelessWidget {
             child: Zone3SlotWidget(
               slot: slots[0],
               onTap: () => onSlotTap(slots[0]),
+              borderRadius: slotRadius,
             ),
           ),
-          const SizedBox(height: 10.0),
+          const SizedBox(height: 8.0),
           Expanded(
             child: Zone3SlotWidget(
               slot: slots[1],
               onTap: () => onSlotTap(slots[1]),
+              borderRadius: slotRadius,
             ),
           ),
         ],
@@ -161,32 +238,35 @@ class Zone3SpreadCanvas extends StatelessWidget {
     }
 
     if (slots.length == 3) {
-      // 3 слота: 1 большой сверху, 2 снизу
+      // 3 слота: 1 сверху широкий, 2 снизу
       return Column(
         children: [
           Expanded(
-            flex: 6,
+            flex: 5,
             child: Zone3SlotWidget(
               slot: slots[0],
               onTap: () => onSlotTap(slots[0]),
+              borderRadius: slotRadius,
             ),
           ),
-          const SizedBox(height: 10.0),
+          const SizedBox(height: 8.0),
           Expanded(
-            flex: 5,
+            flex: 4,
             child: Row(
               children: [
                 Expanded(
                   child: Zone3SlotWidget(
                     slot: slots[1],
                     onTap: () => onSlotTap(slots[1]),
+                    borderRadius: slotRadius,
                   ),
                 ),
-                const SizedBox(width: 10.0),
+                const SizedBox(width: 8.0),
                 Expanded(
                   child: Zone3SlotWidget(
                     slot: slots[2],
                     onTap: () => onSlotTap(slots[2]),
+                    borderRadius: slotRadius,
                   ),
                 ),
               ],
@@ -196,10 +276,9 @@ class Zone3SpreadCanvas extends StatelessWidget {
       );
     }
 
-    // По умолчанию 4 слота: Сетка 2×2
+    // 4 слота: сетка 2×2 (по умолчанию)
     return Column(
       children: [
-        // Верхний ряд: Слот 0 и Слот 1
         Expanded(
           child: Row(
             children: [
@@ -207,38 +286,37 @@ class Zone3SpreadCanvas extends StatelessWidget {
                 child: Zone3SlotWidget(
                   slot: slots[0],
                   onTap: () => onSlotTap(slots[0]),
+                  borderRadius: slotRadius,
                 ),
               ),
-              const SizedBox(width: 10.0),
+              const SizedBox(width: 8.0),
               Expanded(
                 child: Zone3SlotWidget(
                   slot: slots[1],
                   onTap: () => onSlotTap(slots[1]),
+                  borderRadius: slotRadius,
                 ),
               ),
             ],
           ),
         ),
-
-        const SizedBox(height: 10.0),
-
-        // Нижний ряд: Слот 2 и Слот 3
+        const SizedBox(height: 8.0),
         Expanded(
           child: Row(
             children: [
               Expanded(
                 child: Zone3SlotWidget(
                   slot: slots.length > 2 ? slots[2] : _fallbackSlot(2),
-                  onTap: () => onSlotTap(
-                      slots.length > 2 ? slots[2] : _fallbackSlot(2)),
+                  onTap: () => onSlotTap(slots.length > 2 ? slots[2] : _fallbackSlot(2)),
+                  borderRadius: slotRadius,
                 ),
               ),
-              const SizedBox(width: 10.0),
+              const SizedBox(width: 8.0),
               Expanded(
                 child: Zone3SlotWidget(
                   slot: slots.length > 3 ? slots[3] : _fallbackSlot(3),
-                  onTap: () => onSlotTap(
-                      slots.length > 3 ? slots[3] : _fallbackSlot(3)),
+                  onTap: () => onSlotTap(slots.length > 3 ? slots[3] : _fallbackSlot(3)),
+                  borderRadius: slotRadius,
                 ),
               ),
             ],
@@ -250,7 +328,7 @@ class Zone3SpreadCanvas extends StatelessWidget {
 
   SlotModel _fallbackSlot(int index) {
     return SlotModel(
-      id: 'fallback_$index',
+      id: 'fallback_slot_$index',
       slotIndex: index,
       status: SlotStatus.empty,
     );
