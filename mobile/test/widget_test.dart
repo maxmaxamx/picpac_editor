@@ -65,6 +65,14 @@ void main() {
     await tester.tap(find.text('Выбрать параметры альбома'));
     await tester.pumpAndSettle();
 
+    // Verify AlbumTemplatesScreen
+    expect(find.text('Выбор шаблона'), findsOneWidget);
+    expect(find.text('Классический выпускной'), findsAtLeastNWidgets(1));
+    expect(find.text('Выбрать этот шаблон'), findsOneWidget);
+
+    await tester.tap(find.text('Выбрать этот шаблон'));
+    await tester.pumpAndSettle();
+
     // Verify AlbumParametersScreen
     expect(find.text('Параметры альбома'), findsOneWidget);
     expect(find.text('Формат альбома'), findsOneWidget);

@@ -30,11 +30,13 @@ enum AlbumLamination {
 class AlbumParametersScreen extends ConsumerStatefulWidget {
   final String albumTitle;
   final String userName;
+  final String? selectedTemplateTitle;
 
   const AlbumParametersScreen({
     super.key,
     required this.albumTitle,
     required this.userName,
+    this.selectedTemplateTitle,
   });
 
   @override
@@ -193,6 +195,39 @@ class _AlbumParametersScreenState extends ConsumerState<AlbumParametersScreen> {
                         ],
                       ),
                     ),
+
+                    if (widget.selectedTemplateTitle != null) ...[
+                      const SizedBox(height: 10.0),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                        decoration: BoxDecoration(
+                          color: PicPacColors.primaryCoralSoft,
+                          borderRadius: BorderRadius.circular(8.0),
+                          border: Border.all(color: PicPacColors.primaryCoral.withValues(alpha: 0.2)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              LucideIcons.layoutTemplate,
+                              size: 15.0,
+                              color: PicPacColors.primaryCoral,
+                            ),
+                            const SizedBox(width: 8.0),
+                            Expanded(
+                              child: Text(
+                                'Шаблон оформления: ${widget.selectedTemplateTitle}',
+                                style: PicPacTypography.metaInfo.copyWith(
+                                  color: PicPacColors.primaryCoral,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
 
                     const SizedBox(height: 24.0),
 

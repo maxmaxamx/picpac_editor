@@ -7,7 +7,7 @@ import '../../../../core/theme/picpac_colors.dart';
 import '../../../../core/theme/picpac_typography.dart';
 import '../../../editor/presentation/screens/spread_editor_screen.dart';
 import '../widgets/pin_code_input.dart';
-import 'album_parameters_screen.dart';
+import 'album_templates_screen.dart';
 
 enum OnboardingMode {
   join,
@@ -112,7 +112,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       Navigator.push<void>(
         context,
         MaterialPageRoute(
-          builder: (_) => AlbumParametersScreen(
+          builder: (_) => AlbumTemplatesScreen(
             albumTitle: title,
             userName: name,
           ),

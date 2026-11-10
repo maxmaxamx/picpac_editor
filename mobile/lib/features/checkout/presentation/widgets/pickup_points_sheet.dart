@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/picpac_colors.dart';
 import '../../../../core/theme/picpac_typography.dart';
 import '../../domain/pickup_point.dart';
+import 'google_map_pickup_view.dart';
 
 class PickupPointsSheet extends StatefulWidget {
   final PickupPoint? initialSelectedPoint;
@@ -47,32 +48,6 @@ class _PickupPointsSheetState extends State<PickupPointsSheet> {
           p.address.toLowerCase().contains(_searchQuery.toLowerCase());
       return matchesProvider && matchesQuery;
     }).toList();
-  }
-
-  void _onMapTap(Offset localPosition, Size mapSize) {
-    if (mapSize.width <= 0 || mapSize.height <= 0) return;
-
-    final tapX = localPosition.dx / mapSize.width;
-    final tapY = localPosition.dy / mapSize.height;
-
-    PickupPoint? closest;
-    double minDistance = double.infinity;
-
-    for (final p in _filteredPoints) {
-      final dx = p.mapX - tapX;
-      final dy = p.mapY - tapY;
-      final dist = dx * dx + dy * dy;
-      if (dist < minDistance) {
-        minDistance = dist;
-        closest = p;
-      }
-    }
-
-    if (closest != null && minDistance < 0.08) {
-      setState(() {
-        _selectedPoint = closest!;
-      });
-    }
   }
 
   @override
@@ -220,71 +195,19 @@ class _PickupPointsSheetState extends State<PickupPointsSheet> {
 
               const SizedBox(height: 12.0),
 
-              // МИНИ-КАРТА (Интерактивная векторная карта Минска с маркерами)
+              // ИНТЕРАКТИВНАЯ КАРТА GOOGLE MAPS С ПУНКТАМИ ВЫДАЧИ
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10.0),
-                  child: LayoutBuilder(
-                    builder: (context, mapConstraints) {
-                      final mapWidth = mapConstraints.maxWidth;
-                      const mapHeight = 150.0;
-
-                      return GestureDetector(
-                        onTapUp: (details) => _onMapTap(details.localPosition, Size(mapWidth, mapHeight)),
-                        child: SizedBox(
-                          width: mapWidth,
-                          height: mapHeight,
-                          child: Stack(
-                            children: [
-                              CustomPaint(
-                                size: Size(mapWidth, mapHeight),
-                                painter: _MiniMapPainter(
-                                  points: _filteredPoints,
-                                  selectedPointId: _selectedPoint.id,
-                                ),
-                              ),
-                              // Плашка выбранного пункта на карте
-                              Positioned(
-                                left: 8.0,
-                                bottom: 8.0,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                                  decoration: BoxDecoration(
-                                    color: PicPacColors.white.withValues(alpha: 0.94),
-                                    borderRadius: BorderRadius.circular(6.0),
-                                    boxShadow: const [
-                                      BoxShadow(
-                                        color: Color(0x1F000000),
-                                        blurRadius: 4.0,
-                                        offset: Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        LucideIcons.mapPin,
-                                        size: 13.0,
-                                        color: PicPacColors.primaryCoral,
-                                      ),
-                                      const SizedBox(width: 4.0),
-                                      Text(
-                                        _selectedPoint.name,
-                                        style: PicPacTypography.metaInfo.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          color: PicPacColors.textDark,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
+                  child: GoogleMapPickupView(
+                    height: 165.0,
+                    points: _filteredPoints,
+                    selectedPoint: _selectedPoint,
+                    onPointSelected: (point) {
+                      setState(() {
+                        _selectedPoint = point;
+                      });
                     },
                   ),
                 ),
@@ -433,115 +356,5 @@ class _PickupPointsSheetState extends State<PickupPointsSheet> {
         );
       },
     );
-  }
-}
-
-/// Красивый векторный отрисовщик мини-карты
-class _MiniMapPainter extends CustomPainter {
-  final List<PickupPoint> points;
-  final String selectedPointId;
-
-  _MiniMapPainter({
-    required this.points,
-    required this.selectedPointId,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // 1. Фон карты (светло-серый)
-    final bgPaint = Paint()..color = const Color(0xFFF1F5F9);
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
-
-    // 2. Зеленые зоны (парки)
-    final parkPaint = Paint()..color = const Color(0xFFDCFCE7);
-    canvas.drawCircle(Offset(size.width * 0.45, size.height * 0.28), 24.0, parkPaint);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width * 0.65, size.height * 0.45, 50.0, 32.0),
-        const Radius.circular(8.0),
-      ),
-      parkPaint,
-    );
-
-    // 3. Водный путь (Река Свислочь)
-    final riverPaint = Paint()
-      ..color = const Color(0xFFBAE6FD)
-      ..strokeWidth = 10.0
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final riverPath = Path()
-      ..moveTo(size.width * 0.15, 0)
-      ..cubicTo(
-        size.width * 0.35, size.height * 0.3,
-        size.width * 0.45, size.height * 0.6,
-        size.width * 0.85, size.height,
-      );
-    canvas.drawPath(riverPath, riverPaint);
-
-    // 4. Сетка дорог и проспектов
-    final roadPaint = Paint()
-      ..color = const Color(0xFFE2E8F0)
-      ..strokeWidth = 3.5
-      ..style = PaintingStyle.stroke;
-
-    final majorRoadPaint = Paint()
-      ..color = const Color(0xFFCBD5E1)
-      ..strokeWidth = 5.0
-      ..style = PaintingStyle.stroke;
-
-    // Главный проспект (Победителей / Независимости)
-    canvas.drawLine(
-      Offset(0, size.height * 0.55),
-      Offset(size.width, size.height * 0.25),
-      majorRoadPaint,
-    );
-    // Вторая диагональ
-    canvas.drawLine(
-      Offset(size.width * 0.2, size.height),
-      Offset(size.width * 0.65, 0),
-      majorRoadPaint,
-    );
-
-    // Поперечные улицы
-    canvas.drawLine(Offset(size.width * 0.28, 0), Offset(size.width * 0.28, size.height), roadPaint);
-    canvas.drawLine(Offset(size.width * 0.52, 0), Offset(size.width * 0.52, size.height), roadPaint);
-    canvas.drawLine(Offset(size.width * 0.76, 0), Offset(size.width * 0.76, size.height), roadPaint);
-    canvas.drawLine(Offset(0, size.height * 0.75), Offset(size.width, size.height * 0.75), roadPaint);
-
-    // 5. Маркеры пунктов выдачи
-    for (final p in points) {
-      final isSelected = p.id == selectedPointId;
-      final px = p.mapX * size.width;
-      final py = p.mapY * size.height;
-
-      if (isSelected) {
-        // Пульсирующий ореол для выбранного пункта
-        final auraPaint = Paint()..color = PicPacColors.primaryCoral.withValues(alpha: 0.25);
-        canvas.drawCircle(Offset(px, py), 15.0, auraPaint);
-
-        // Основной яркий маркер
-        final pinPaint = Paint()..color = PicPacColors.primaryCoral;
-        canvas.drawCircle(Offset(px, py), 7.0, pinPaint);
-
-        final pinInner = Paint()..color = PicPacColors.white;
-        canvas.drawCircle(Offset(px, py), 3.0, pinInner);
-      } else {
-        // Обычные маркеры
-        final pinBorder = Paint()
-          ..color = PicPacColors.primaryCoral
-          ..strokeWidth = 2.0
-          ..style = PaintingStyle.stroke;
-        final pinFill = Paint()..color = PicPacColors.white;
-
-        canvas.drawCircle(Offset(px, py), 5.5, pinFill);
-        canvas.drawCircle(Offset(px, py), 5.5, pinBorder);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _MiniMapPainter oldDelegate) {
-    return oldDelegate.selectedPointId != selectedPointId || oldDelegate.points != points;
   }
 }

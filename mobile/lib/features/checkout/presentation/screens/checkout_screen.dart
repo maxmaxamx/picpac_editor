@@ -402,142 +402,188 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Данные покупателя',
-            style: PicPacTypography.photoCaption.copyWith(
-              color: PicPacColors.textMuted,
-              fontWeight: FontWeight.w500,
-            ),
+          Row(
+            children: [
+              const Icon(
+                LucideIcons.user,
+                size: 17.0,
+                color: PicPacColors.primaryCoral,
+              ),
+              const SizedBox(width: 8.0),
+              Text(
+                'Данные покупателя',
+                style: PicPacTypography.h2Section.copyWith(
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12.0),
+          const SizedBox(height: 14.0),
 
           // Телефон
-          TextField(
+          _buildModernInputField(
             controller: _phoneController,
+            label: 'Номер телефона',
+            hintText: '+375 (__) ___-__-__',
+            icon: LucideIcons.phone,
             keyboardType: TextInputType.phone,
             inputFormatters: [_BelarusPhoneFormatter()],
-            style: const TextStyle(
-              fontSize: 15.0,
+          ),
+
+          const SizedBox(height: 12.0),
+
+          // Имя
+          _buildModernInputField(
+            controller: _nameController,
+            label: 'Имя*',
+            hintText: 'Имя',
+            icon: LucideIcons.user,
+          ),
+
+          const SizedBox(height: 12.0),
+
+          // Фамилия
+          _buildModernInputField(
+            controller: _surnameController,
+            label: 'Фамилия*',
+            hintText: 'Фамилия',
+            icon: LucideIcons.userCheck,
+          ),
+
+          const SizedBox(height: 12.0),
+
+          // Эл. почта
+          _buildModernInputField(
+            controller: _emailController,
+            label: 'Эл. почта*',
+            hintText: 'Эл. почта',
+            icon: LucideIcons.mail,
+            keyboardType: TextInputType.emailAddress,
+          ),
+
+          const SizedBox(height: 14.0),
+
+          // Комментарий к заказу (большое скругленное поле)
+          Text(
+            'Комментарий к заказу',
+            style: PicPacTypography.metaInfo.copyWith(
               fontWeight: FontWeight.w600,
               color: PicPacColors.textDark,
             ),
-            decoration: const InputDecoration(
-              hintText: '+375 (__) ___-__-__',
-              hintStyle: TextStyle(
-                color: PicPacColors.textMuted,
-                fontSize: 15.0,
-              ),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: PicPacColors.borderDefault, width: 1.2),
-              ),
-              focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: PicPacColors.primaryCoral, width: 1.8),
-              ),
-              isDense: true,
-              contentPadding: EdgeInsets.symmetric(vertical: 8.0),
-            ),
           ),
-
-          const SizedBox(height: 16.0),
-
-          // Имя
-          TextField(
-            controller: _nameController,
-            style: PicPacTypography.photoCaption.copyWith(
-              fontSize: 15.0,
-              fontWeight: FontWeight.w600,
-            ),
-            decoration: const InputDecoration(
-              hintText: 'Имя*',
-              hintStyle: TextStyle(color: PicPacColors.textMuted, fontSize: 14.5),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: PicPacColors.borderDefault, width: 1.2),
-              ),
-              focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: PicPacColors.primaryCoral, width: 1.8),
-              ),
-              isDense: true,
-              contentPadding: EdgeInsets.symmetric(vertical: 8.0),
-            ),
-          ),
-
-          const SizedBox(height: 16.0),
-
-          // Фамилия
-          TextField(
-            controller: _surnameController,
-            style: PicPacTypography.photoCaption.copyWith(
-              fontSize: 15.0,
-              fontWeight: FontWeight.w600,
-            ),
-            decoration: const InputDecoration(
-              hintText: 'Фамилия*',
-              hintStyle: TextStyle(color: PicPacColors.textMuted, fontSize: 14.5),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: PicPacColors.borderDefault, width: 1.2),
-              ),
-              focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: PicPacColors.primaryCoral, width: 1.8),
-              ),
-              isDense: true,
-              contentPadding: EdgeInsets.symmetric(vertical: 8.0),
-            ),
-          ),
-
-          const SizedBox(height: 16.0),
-
-          // Эл. почта
-          TextField(
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
-            style: PicPacTypography.photoCaption.copyWith(
-              fontSize: 15.0,
-              fontWeight: FontWeight.w600,
-            ),
-            decoration: const InputDecoration(
-              hintText: 'Эл. почта*',
-              hintStyle: TextStyle(color: PicPacColors.textMuted, fontSize: 14.5),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: PicPacColors.borderDefault, width: 1.2),
-              ),
-              focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: PicPacColors.primaryCoral, width: 1.8),
-              ),
-              isDense: true,
-              contentPadding: EdgeInsets.symmetric(vertical: 8.0),
-            ),
-          ),
-
-          const SizedBox(height: 20.0),
-
-          // Комментарий к заказу (большое скругленное поле)
+          const SizedBox(height: 6.0),
           Container(
-            height: 84.0,
-            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+            height: 76.0,
+            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
             decoration: BoxDecoration(
-              color: PicPacColors.white,
+              color: PicPacColors.surfaceGrey,
               borderRadius: BorderRadius.circular(8.0),
-              border: Border.all(color: PicPacColors.borderDefault, width: 1.2),
+              border: Border.all(color: PicPacColors.borderDefault),
             ),
-            child: TextField(
-              controller: _commentController,
-              maxLines: null,
-              expands: true,
-              style: PicPacTypography.photoCaption,
-              decoration: const InputDecoration(
-                hintText: 'Комментарий к заказу',
-                hintStyle: TextStyle(
-                  color: PicPacColors.textMuted,
-                  fontSize: 14.0,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 2.0),
+                  child: Icon(
+                    LucideIcons.messageSquare,
+                    size: 16.0,
+                    color: PicPacColors.textMuted,
+                  ),
                 ),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
+                const SizedBox(width: 10.0),
+                Expanded(
+                  child: TextField(
+                    controller: _commentController,
+                    maxLines: null,
+                    expands: true,
+                    style: PicPacTypography.photoCaption.copyWith(
+                      color: PicPacColors.textDark,
+                      fontSize: 14.0,
+                    ),
+                    decoration: const InputDecoration(
+                      hintText: 'Пожелания к заказу или доставке...',
+                      hintStyle: TextStyle(
+                        color: PicPacColors.textMuted,
+                        fontSize: 13.5,
+                      ),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildModernInputField({
+    required TextEditingController controller,
+    required String label,
+    required String hintText,
+    required IconData icon,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: PicPacTypography.metaInfo.copyWith(
+            fontWeight: FontWeight.w600,
+            color: PicPacColors.textDark,
+          ),
+        ),
+        const SizedBox(height: 6.0),
+        Container(
+          height: 48.0,
+          decoration: BoxDecoration(
+            color: PicPacColors.surfaceGrey,
+            borderRadius: BorderRadius.circular(8.0),
+            border: Border.all(color: PicPacColors.borderDefault),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+          alignment: Alignment.centerLeft,
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 16.0,
+                color: PicPacColors.textMuted,
+              ),
+              const SizedBox(width: 10.0),
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  keyboardType: keyboardType,
+                  inputFormatters: inputFormatters,
+                  style: const TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w500,
+                    color: PicPacColors.textDark,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: hintText,
+                    hintStyle: const TextStyle(
+                      color: PicPacColors.textMuted,
+                      fontSize: 14.0,
+                    ),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
