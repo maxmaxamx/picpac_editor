@@ -174,6 +174,13 @@ class Zone3SlotWidget extends StatelessWidget {
   /// - В правом нижнем углу фото — полупрозрачная белая капсула с реакциями (❤️ 4  🔥 2).
   /// - Под фото — строка подписи (photoCaption, 1 строка) и микро-бейдж автора (metaInfo).
   Widget _buildFilledState() {
+    final showCaption = slot.caption != null &&
+        slot.caption!.trim().isNotEmpty &&
+        slot.caption!.trim().toLowerCase() != 'фото из пула';
+    final showAuthor = slot.authorName != null &&
+        slot.authorName!.trim().isNotEmpty &&
+        slot.authorName!.trim().toLowerCase() != 'участник';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -231,14 +238,14 @@ class Zone3SlotWidget extends StatelessWidget {
         const SizedBox(height: 3.0),
 
         // Подпись под фото и микро-бейдж автора
-        if (slot.caption != null || slot.authorName != null)
+        if (showCaption || showAuthor)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 1.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (slot.caption != null)
+                if (showCaption)
                   Text(
                     slot.caption!,
                     style: PicPacTypography.photoCaption.copyWith(
@@ -247,11 +254,14 @@ class Zone3SlotWidget extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                if (slot.authorName != null)
+                if (showAuthor)
                   Text(
-                    slot.authorName!,
+                    slot.authorName!.startsWith('добавил')
+                        ? slot.authorName!
+                        : 'добавил ${slot.authorName}',
                     style: PicPacTypography.metaInfo.copyWith(
                       fontSize: 9.5,
+                      color: PicPacColors.textMuted,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

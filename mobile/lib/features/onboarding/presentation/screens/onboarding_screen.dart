@@ -91,7 +91,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         return;
       }
 
-      final pin = _pinController.text.trim();
+      var pin = _pinController.text.trim();
+      final uri = Uri.tryParse(pin);
+      if (uri != null && uri.queryParameters.containsKey('code')) {
+        pin = uri.queryParameters['code']!;
+      } else {
+        final match = RegExp(r'\b\d{6}\b').firstMatch(pin);
+        if (match != null) {
+          pin = match.group(0)!;
+        }
+      }
       if (pin.length != 6) {
         _showToast('Введите 6-значный код альбома');
         return;

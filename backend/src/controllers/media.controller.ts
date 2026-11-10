@@ -10,7 +10,7 @@ import { io } from '../index.js';
 export async function uploadMedia(req: AuthenticatedRequest, res: Response) {
   try {
     const userId = req.user?.userId;
-    const userName = req.user?.displayName || 'Участник';
+    const userName = req.user?.displayName || (req.body?.uploaderName as string) || 'Организатор';
     const { id: albumId } = req.params;
 
     if (!userId) {

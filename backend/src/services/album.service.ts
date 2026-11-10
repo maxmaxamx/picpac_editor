@@ -1,6 +1,6 @@
 import { Transaction } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
-import { sequelize, Album, AlbumMember, Page, Slot, MediaPool } from '../models/index.js';
+import { sequelize, Album, AlbumMember, Page, Slot, MediaPool, User } from '../models/index.js';
 
 export function generateInviteCode(): string {
   // 6-значный цифровой код для удобного ввода с мобильной клавиатуры
@@ -193,12 +193,15 @@ export async function createAlbumTransaction(dto: CreateAlbumDTO) {
     }
 
     // 4. Добавление стартовых качественных фотографий в общий пул альбома (MediaPool)
+    const hostUser = await User.findByPk(dto.hostUserId, { transaction: t });
+    const hostDisplayName = hostUser?.displayName || 'Организатор';
+
     const starterPhotos = [
       {
         id: uuidv4(),
         albumId: album.id,
         uploaderId: dto.hostUserId,
-        uploaderName: 'Участник',
+        uploaderName: hostDisplayName,
         originalUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=1200&fit=crop',
         thumbUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&fit=crop',
         width: 1200,
@@ -208,7 +211,7 @@ export async function createAlbumTransaction(dto: CreateAlbumDTO) {
         id: uuidv4(),
         albumId: album.id,
         uploaderId: dto.hostUserId,
-        uploaderName: 'Участник',
+        uploaderName: hostDisplayName,
         originalUrl: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?w=1200&fit=crop',
         thumbUrl: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?w=600&fit=crop',
         width: 1200,
@@ -218,7 +221,7 @@ export async function createAlbumTransaction(dto: CreateAlbumDTO) {
         id: uuidv4(),
         albumId: album.id,
         uploaderId: dto.hostUserId,
-        uploaderName: 'Участник',
+        uploaderName: hostDisplayName,
         originalUrl: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1200&fit=crop',
         thumbUrl: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&fit=crop',
         width: 1200,
@@ -228,7 +231,7 @@ export async function createAlbumTransaction(dto: CreateAlbumDTO) {
         id: uuidv4(),
         albumId: album.id,
         uploaderId: dto.hostUserId,
-        uploaderName: 'Участник',
+        uploaderName: hostDisplayName,
         originalUrl: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=1200&fit=crop',
         thumbUrl: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=600&fit=crop',
         width: 1200,
@@ -238,7 +241,7 @@ export async function createAlbumTransaction(dto: CreateAlbumDTO) {
         id: uuidv4(),
         albumId: album.id,
         uploaderId: dto.hostUserId,
-        uploaderName: 'Участник',
+        uploaderName: hostDisplayName,
         originalUrl: 'https://images.unsplash.com/photo-1491438590914-bc09fcaaf77a?w=1200&fit=crop',
         thumbUrl: 'https://images.unsplash.com/photo-1491438590914-bc09fcaaf77a?w=600&fit=crop',
         width: 1200,
@@ -248,7 +251,7 @@ export async function createAlbumTransaction(dto: CreateAlbumDTO) {
         id: uuidv4(),
         albumId: album.id,
         uploaderId: dto.hostUserId,
-        uploaderName: 'Участник',
+        uploaderName: hostDisplayName,
         originalUrl: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1200&fit=crop',
         thumbUrl: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=600&fit=crop',
         width: 1200,
@@ -258,7 +261,7 @@ export async function createAlbumTransaction(dto: CreateAlbumDTO) {
         id: uuidv4(),
         albumId: album.id,
         uploaderId: dto.hostUserId,
-        uploaderName: 'Участник',
+        uploaderName: hostDisplayName,
         originalUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1200&fit=crop',
         thumbUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&fit=crop',
         width: 1200,
@@ -268,7 +271,7 @@ export async function createAlbumTransaction(dto: CreateAlbumDTO) {
         id: uuidv4(),
         albumId: album.id,
         uploaderId: dto.hostUserId,
-        uploaderName: 'Участник',
+        uploaderName: hostDisplayName,
         originalUrl: 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=1200&fit=crop',
         thumbUrl: 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=600&fit=crop',
         width: 1200,

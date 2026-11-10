@@ -172,7 +172,7 @@ export async function assignSlotMedia(req: AuthenticatedRequest, res: Response) 
     const { id: albumId, slotId } = req.params;
     const { mediaId, caption } = req.body;
     const userId = req.user?.userId;
-    const displayName = req.user?.displayName || 'Участник';
+    const displayName = req.user?.displayName || 'Организатор';
 
     const slot = await Slot.findByPk(slotId);
     if (!slot) {

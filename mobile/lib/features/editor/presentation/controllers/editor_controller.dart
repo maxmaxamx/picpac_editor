@@ -219,7 +219,14 @@ class EditorController extends Notifier<EditorState> {
           if (media != null && media['thumbUrl'] != null) {
             status = SlotStatus.filled;
             imageUrl = _apiClient.resolveUrl(media['thumbUrl'] as String);
-            authorName = media['uploaderName'] as String? ?? 'Участник';
+            final sAuthor = sMap['authorName'] as String?;
+            final mAuthor = media['uploaderName'] as String?;
+            final resolvedAuthor = (sAuthor != null && sAuthor.isNotEmpty && sAuthor != 'Участник')
+                ? sAuthor
+                : ((mAuthor != null && mAuthor.isNotEmpty && mAuthor != 'Участник')
+                    ? mAuthor
+                    : user.displayName);
+            authorName = resolvedAuthor;
           } else if (lockedByUserId != null) {
             final lockedUntil = lockedUntilStr != null ? DateTime.tryParse(lockedUntilStr) : null;
             final isStillLocked = lockedUntil == null || lockedUntil.isAfter(DateTime.now());
@@ -275,21 +282,26 @@ class EditorController extends Notifier<EditorState> {
       // Маппинг пула медиа
       final List<MediaPoolItem> mappedPool = rawMediaPool.map((m) {
         final thumb = m['thumbUrl'] as String? ?? m['originalUrl'] as String?;
+        final u = m['user'] as Map<String, dynamic>? ?? {};
+        final rawUName = (u['displayName'] as String?) ?? (m['uploaderName'] as String?);
+        final resolvedUploader = (rawUName != null && rawUName.isNotEmpty && rawUName != 'Участник')
+            ? rawUName
+            : user.displayName;
         return MediaPoolItem(
           id: m['id'] as String,
           imageUrl: _apiClient.resolveUrl(thumb),
-          uploaderName: m['uploaderName'] as String? ?? 'Участник',
+          uploaderName: resolvedUploader,
         );
       }).toList();
 
       // Маппинг участников
       final List<MemberModel> mappedMembers = rawMembers.map((m) {
         final u = m['user'] as Map<String, dynamic>? ?? {};
-        final name = u['displayName'] as String? ?? 'Участник';
+        final name = (u['displayName'] as String?) ?? user.displayName;
         final avatar = u['avatarUrl'] as String? ?? 'https://i.pravatar.cc/100?u=$name';
         return MemberModel(
           id: (u['id'] as String?) ?? (m['userId'] as String? ?? ''),
-          name: name,
+          name: name.isNotEmpty && name != 'Участник' ? name : user.displayName,
           avatarUrl: avatar,
           isOnline: false,
         );
@@ -385,10 +397,14 @@ class EditorController extends Notifier<EditorState> {
     // Слушаем новые фото в пуле (Media added)
     _mediaAddedSub = _socketService.mediaAddedStream.listen((mediaData) {
       final thumb = mediaData['thumbUrl'] as String? ?? mediaData['originalUrl'] as String?;
+      final uName = mediaData['uploaderName'] as String?;
+      final resolvedName = (uName != null && uName.isNotEmpty && uName != 'Участник')
+          ? uName
+          : (_currentUser?.displayName.isNotEmpty == true ? _currentUser!.displayName : 'Организатор');
       final newItem = MediaPoolItem(
         id: mediaData['id'] as String,
         imageUrl: _apiClient.resolveUrl(thumb),
-        uploaderName: mediaData['uploaderName'] as String? ?? 'Участник',
+        uploaderName: resolvedName,
       );
 
       // Добавляем новое фото в начало пула
@@ -452,7 +468,14 @@ class EditorController extends Notifier<EditorState> {
         newStatus = SlotStatus.filled;
         final rawUrl = media['thumbUrl'] as String? ?? media['originalUrl'] as String?;
         imageUrl = _apiClient.resolveUrl(rawUrl);
-        authorName = media['uploaderName'] as String? ?? 'Участник';
+        final sAuthor = slotData['authorName'] as String?;
+        final mAuthor = media['uploaderName'] as String?;
+        final resolvedAuthor = (sAuthor != null && sAuthor.isNotEmpty && sAuthor != 'Участник')
+            ? sAuthor
+            : ((mAuthor != null && mAuthor.isNotEmpty && mAuthor != 'Участник')
+                ? mAuthor
+                : (_currentUser?.displayName.isNotEmpty == true ? _currentUser!.displayName : ''));
+        authorName = resolvedAuthor.isNotEmpty ? resolvedAuthor : null;
       } else if (lockedByUserId != null) {
         if (lockedByUserId == currentUserId) {
           newStatus = SlotStatus.selected;
@@ -522,11 +545,11 @@ class EditorController extends Notifier<EditorState> {
     final selectedId = state.selectedSlotId;
     if (selectedId == null) return;
 
-    // 1. WebSocket sync
+    // 1. WebSocket sync (без дефолтной подписи "фото из пула")
     _socketService.assignMedia(
       slotId: selectedId,
       mediaId: photo.id,
-      caption: 'Фото из пула',
+      caption: null,
     );
 
     // 2. HTTP sync
@@ -536,7 +559,7 @@ class EditorController extends Notifier<EditorState> {
             albumId: state.albumId,
             slotId: selectedId,
             mediaId: photo.id,
-            caption: 'Фото из пула',
+            caption: null,
           )
           .catchError((_) => <String, dynamic>{});
     }
@@ -828,6 +851,14 @@ class EditorController extends Notifier<EditorState> {
   }
 
   void _updateSlotOptimisticAssigned(String slotId, MediaPoolItem photo) {
+    final author = (_currentUser?.displayName != null &&
+            _currentUser!.displayName.trim().isNotEmpty &&
+            _currentUser!.displayName != 'Участник')
+        ? _currentUser!.displayName
+        : (photo.uploaderName.isNotEmpty && photo.uploaderName != 'Участник'
+            ? photo.uploaderName
+            : 'Организатор');
+
     final updatedPages = state.pages.map((p) {
       return p.copyWith(
         slots: p.slots.map((s) {
@@ -835,8 +866,8 @@ class EditorController extends Notifier<EditorState> {
             return s.copyWith(
               status: SlotStatus.filled,
               imageUrl: photo.imageUrl,
-              authorName: 'добавил ${photo.uploaderName}',
-              caption: 'Фото из пула',
+              authorName: author,
+              caption: null,
               reactions: {'❤️': 1},
             );
           }

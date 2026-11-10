@@ -1141,11 +1141,11 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
   }
 
   void _showShareDialog(String inviteCode) {
-    final displayCode = inviteCode.isNotEmpty
-        ? (inviteCode.length == 6
-            ? '${inviteCode.substring(0, 3)} - ${inviteCode.substring(3)}'
-            : inviteCode)
-        : '849 - 204';
+    final rawCode = inviteCode.isNotEmpty ? inviteCode : '849204';
+    final displayCode = rawCode.length == 6
+        ? '${rawCode.substring(0, 3)} - ${rawCode.substring(3)}'
+        : rawCode;
+    final shareUrl = 'https://picpac.by/join?code=$rawCode';
 
     showDialog<void>(
       context: context,
@@ -1153,56 +1153,158 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
         return AlertDialog(
           backgroundColor: PicPacColors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.0),
+            borderRadius: BorderRadius.circular(16.0),
           ),
-          title: Text(
-            'Пригласить одноклассников',
-            style: PicPacTypography.h2Section,
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  color: PicPacColors.primaryCoral.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                child: const Icon(
+                  LucideIcons.share2,
+                  size: 20.0,
+                  color: PicPacColors.primaryCoral,
+                ),
+              ),
+              const SizedBox(width: 12.0),
+              Expanded(
+                child: Text(
+                  'Пригласить в альбом',
+                  style: PicPacTypography.h2Section.copyWith(fontSize: 18.0),
+                ),
+              ),
+            ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Отправьте 6-значный код для совместного заполнения альбома:',
-                style: PicPacTypography.photoCaption,
+                'Поделитесь ссылкой или кодом с участниками для совместного заполнения альбома:',
+                style: PicPacTypography.photoCaption.copyWith(fontSize: 13.0),
               ),
               const SizedBox(height: 16.0),
+              // Ссылка на приложение с кодом
+              Text(
+                'Ссылка на альбом:',
+                style: PicPacTypography.buttonTextDark.copyWith(
+                  fontSize: 12.0,
+                  color: PicPacColors.textMuted,
+                ),
+              ),
+              const SizedBox(height: 6.0),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                 decoration: BoxDecoration(
                   color: PicPacColors.surfaceGrey,
-                  borderRadius: BorderRadius.circular(8.0),
+                  borderRadius: BorderRadius.circular(10.0),
                   border: Border.all(color: PicPacColors.borderDefault),
                 ),
-                alignment: Alignment.center,
-                child: Text(
-                  displayCode,
-                  style: const TextStyle(
-                    fontSize: 22.0,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 4.0,
-                    color: PicPacColors.textDark,
-                  ),
+                child: Row(
+                  children: [
+                    const Icon(LucideIcons.link, size: 16.0, color: PicPacColors.textMuted),
+                    const SizedBox(width: 8.0),
+                    Expanded(
+                      child: Text(
+                        shareUrl,
+                        style: PicPacTypography.photoCaption.copyWith(
+                          fontSize: 13.0,
+                          color: PicPacColors.primaryCoral,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(LucideIcons.copy, size: 18.0, color: PicPacColors.textDark),
+                      tooltip: 'Скопировать ссылку',
+                      constraints: const BoxConstraints(),
+                      padding: EdgeInsets.zero,
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: shareUrl));
+                        _showToast(context, 'Ссылка скопирована в буфер обмена!');
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14.0),
+              // Код альбома
+              Text(
+                'Код альбома:',
+                style: PicPacTypography.buttonTextDark.copyWith(
+                  fontSize: 12.0,
+                  color: PicPacColors.textMuted,
+                ),
+              ),
+              const SizedBox(height: 6.0),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
+                decoration: BoxDecoration(
+                  color: PicPacColors.surfaceGrey,
+                  borderRadius: BorderRadius.circular(10.0),
+                  border: Border.all(color: PicPacColors.borderDefault),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      displayCode,
+                      style: const TextStyle(
+                        fontSize: 22.0,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 4.0,
+                        color: PicPacColors.textDark,
+                      ),
+                    ),
+                    const SizedBox(width: 12.0),
+                    IconButton(
+                      icon: const Icon(LucideIcons.copy, size: 18.0, color: PicPacColors.textDark),
+                      tooltip: 'Скопировать код',
+                      constraints: const BoxConstraints(),
+                      padding: EdgeInsets.zero,
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: rawCode));
+                        _showToast(context, 'Код $rawCode скопирован!');
+                      },
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                final rawCode = inviteCode.isNotEmpty ? inviteCode : '849204';
-                Clipboard.setData(ClipboardData(text: rawCode));
-                Navigator.pop(dialogContext);
-                _showToast(context, 'Код $rawCode скопирован в буфер обмена!');
-              },
+              onPressed: () => Navigator.pop(dialogContext),
               child: Text(
-                'Скопировать код',
+                'Закрыть',
                 style: PicPacTypography.buttonTextDark.copyWith(
-                  color: PicPacColors.primaryCoral,
+                  color: PicPacColors.textMuted,
                 ),
               ),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: PicPacColors.primaryCoral,
+                foregroundColor: PicPacColors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
+              ),
+              icon: const Icon(LucideIcons.share, size: 16.0),
+              label: const Text('Поделиться ссылкой'),
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: shareUrl));
+                Navigator.pop(dialogContext);
+                _showToast(context, 'Ссылка скопирована: $shareUrl');
+              },
             ),
           ],
         );
