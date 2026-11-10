@@ -472,11 +472,7 @@ class EditorController extends Notifier<EditorState> {
       final newSlots = List<SlotModel>.from(page.slots);
       newSlots[slotIndex] = updatedSlot;
 
-      return PageModel(
-        pageNumber: page.pageNumber,
-        side: page.side,
-        slots: newSlots,
-      );
+      return page.copyWith(slots: newSlots);
     }).toList();
 
     state = state.copyWith(pages: updatedPages);
@@ -553,9 +549,7 @@ class EditorController extends Notifier<EditorState> {
   void updateCaption(String slotId, String newCaption) {
     _socketService.updateCaption(slotId: slotId, caption: newCaption);
     final updatedPages = state.pages.map((p) {
-      return PageModel(
-        pageNumber: p.pageNumber,
-        side: p.side,
+      return p.copyWith(
         slots: p.slots.map((s) {
           if (s.id == slotId) return s.copyWith(caption: newCaption);
           return s;
@@ -569,9 +563,7 @@ class EditorController extends Notifier<EditorState> {
     _socketService.toggleReaction(slotId: slotId, emoji: emoji);
     // Локальный инкремент
     final updatedPages = state.pages.map((p) {
-      return PageModel(
-        pageNumber: p.pageNumber,
-        side: p.side,
+      return p.copyWith(
         slots: p.slots.map((s) {
           if (s.id == slotId) {
             final reactions = Map<String, int>.from(s.reactions);
@@ -597,9 +589,7 @@ class EditorController extends Notifier<EditorState> {
 
     // 3. Local optimistic update
     final updatedPages = state.pages.map((p) {
-      return PageModel(
-        pageNumber: p.pageNumber,
-        side: p.side,
+      return p.copyWith(
         slots: p.slots.map((s) {
           if (s.id == slotId) {
             return SlotModel(
@@ -824,9 +814,7 @@ class EditorController extends Notifier<EditorState> {
 
   void _updateSlotLocalStatus(String slotId, SlotStatus status) {
     final updatedPages = state.pages.map((p) {
-      return PageModel(
-        pageNumber: p.pageNumber,
-        side: p.side,
+      return p.copyWith(
         slots: p.slots.map((s) {
           if (s.id == slotId) return s.copyWith(status: status);
           if (status == SlotStatus.selected && s.status == SlotStatus.selected) {
@@ -841,9 +829,7 @@ class EditorController extends Notifier<EditorState> {
 
   void _updateSlotOptimisticAssigned(String slotId, MediaPoolItem photo) {
     final updatedPages = state.pages.map((p) {
-      return PageModel(
-        pageNumber: p.pageNumber,
-        side: p.side,
+      return p.copyWith(
         slots: p.slots.map((s) {
           if (s.id == slotId) {
             return s.copyWith(
