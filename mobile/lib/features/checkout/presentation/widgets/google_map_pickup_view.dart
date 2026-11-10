@@ -42,13 +42,21 @@ class _GoogleMapPickupViewState extends State<GoogleMapPickupView> {
   void didUpdateWidget(covariant GoogleMapPickupView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selectedPoint.id != widget.selectedPoint.id && _mapController != null) {
-      _mapController!.animateCamera(
-        CameraUpdate.newLatLngZoom(
-          LatLng(widget.selectedPoint.latitude, widget.selectedPoint.longitude),
-          13.5,
-        ),
-      );
+      try {
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLngZoom(
+            LatLng(widget.selectedPoint.latitude, widget.selectedPoint.longitude),
+            13.5,
+          ),
+        ).catchError((_) {});
+      } catch (_) {}
     }
+  }
+
+  @override
+  void dispose() {
+    _mapController = null;
+    super.dispose();
   }
 
   Set<Marker> _buildMarkers() {
@@ -64,7 +72,11 @@ class _GoogleMapPickupViewState extends State<GoogleMapPickupView> {
         icon: isSelected
             ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)
             : BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose),
-        onTap: () => widget.onPointSelected(point),
+        onTap: () {
+          try {
+            widget.onPointSelected(point);
+          } catch (_) {}
+        },
       );
     }).toSet();
   }
@@ -87,6 +99,7 @@ class _GoogleMapPickupViewState extends State<GoogleMapPickupView> {
               mapToolbarEnabled: false,
               compassEnabled: true,
               onMapCreated: (controller) {
+                if (!mounted) return;
                 _mapController = controller;
               },
             ),
@@ -107,37 +120,46 @@ class _GoogleMapPickupViewState extends State<GoogleMapPickupView> {
   Widget _buildActivePointPill() {
     return Positioned(
       left: 10.0,
-      bottom: 10.0,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
-        decoration: BoxDecoration(
-          color: PicPacColors.white.withValues(alpha: 0.95),
-          borderRadius: BorderRadius.circular(8.0),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x1F000000),
-              blurRadius: 6.0,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              LucideIcons.mapPin,
-              size: 14.0,
-              color: PicPacColors.primaryCoral,
-            ),
-            const SizedBox(width: 6.0),
-            Text(
-              widget.selectedPoint.name,
-              style: PicPacTypography.metaInfo.copyWith(
-                fontWeight: FontWeight.w700,
-                color: PicPacColors.textDark,
+      right: 10.0,
+      bottom: 8.0,
+      child: Align(
+        alignment: Alignment.bottomLeft,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 260.0),
+          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
+          decoration: BoxDecoration(
+            color: PicPacColors.white.withValues(alpha: 0.96),
+            borderRadius: BorderRadius.circular(8.0),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x1F000000),
+                blurRadius: 6.0,
+                offset: Offset(0, 2),
               ),
-            ),
-          ],
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                LucideIcons.mapPin,
+                size: 14.0,
+                color: PicPacColors.primaryCoral,
+              ),
+              const SizedBox(width: 6.0),
+              Flexible(
+                child: Text(
+                  widget.selectedPoint.name,
+                  style: PicPacTypography.metaInfo.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: PicPacColors.textDark,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -154,6 +176,7 @@ class _GoogleMapPickupViewState extends State<GoogleMapPickupView> {
             // Карта
             GestureDetector(
               onTapUp: (details) {
+                if (w <= 0 || h <= 0) return;
                 final tapX = details.localPosition.dx / w;
                 final tapY = details.localPosition.dy / h;
 
