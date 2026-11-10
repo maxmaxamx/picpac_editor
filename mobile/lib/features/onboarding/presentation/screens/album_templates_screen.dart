@@ -4,26 +4,46 @@ import '../../../../core/theme/picpac_colors.dart';
 import '../../../../core/theme/picpac_typography.dart';
 import 'album_parameters_screen.dart';
 
+enum MockupType {
+  cover,
+  vignette,
+  reportage,
+  teachers,
+}
+
+class AlbumSpreadMockup {
+  final String title;
+  final MockupType type;
+
+  const AlbumSpreadMockup({
+    required this.title,
+    required this.type,
+  });
+}
+
+const List<AlbumSpreadMockup> kDefaultMockups = [
+  AlbumSpreadMockup(title: 'Обложка', type: MockupType.cover),
+  AlbumSpreadMockup(title: 'Виньетка', type: MockupType.vignette),
+  AlbumSpreadMockup(title: 'Репортаж', type: MockupType.reportage),
+  AlbumSpreadMockup(title: 'Напутствие', type: MockupType.teachers),
+];
+
 /// Модель шаблона дизайна альбома
 class AlbumTemplate {
   final String id;
   final String title;
-  final String subtitle;
-  final String tag;
-  final String description;
   final Color primaryColor;
   final List<Color> palette;
   final IconData icon;
+  final List<AlbumSpreadMockup> mockups;
 
   const AlbumTemplate({
     required this.id,
     required this.title,
-    required this.subtitle,
-    required this.tag,
-    required this.description,
     required this.primaryColor,
     required this.palette,
     required this.icon,
+    this.mockups = kDefaultMockups,
   });
 }
 
@@ -31,9 +51,6 @@ const List<AlbumTemplate> kAlbumTemplates = [
   AlbumTemplate(
     id: 'classic_grad',
     title: 'Классический выпускной',
-    subtitle: 'Элегантный и строгий',
-    tag: 'ХИТ СЕЗОНА',
-    description: 'Благородная типографика, классическая портретная сетка и золотые акценты для памятных моментов.',
     primaryColor: Color(0xFF1E293B),
     palette: [Color(0xFF0F172A), Color(0xFFD4AF37), Color(0xFFF8FAFC), Color(0xFF94A3B8)],
     icon: LucideIcons.graduationCap,
@@ -41,9 +58,6 @@ const List<AlbumTemplate> kAlbumTemplates = [
   AlbumTemplate(
     id: 'school_drive',
     title: 'Школьный Драйв & Casual',
-    subtitle: 'Динамичный и яркий',
-    tag: 'ПОПУЛЯРНЫЙ',
-    description: 'Живая верстка цитат, яркие акценты и репортажные коллажи для дружного и активного класса.',
     primaryColor: Color(0xFFFF4D4D),
     palette: [Color(0xFFFF4D4D), Color(0xFF3B82F6), Color(0xFFFBBF24), Color(0xFF10B981)],
     icon: LucideIcons.sparkles,
@@ -51,9 +65,6 @@ const List<AlbumTemplate> kAlbumTemplates = [
   AlbumTemplate(
     id: 'minimalism',
     title: 'Минимализм & Ч/Б Эстетика',
-    subtitle: 'Воздушный и чистый',
-    tag: 'СТИЛЬ',
-    description: 'Чистые линии, выверенные поля и акцент на живых эмоциях без визуального шума.',
     primaryColor: Color(0xFF18181B),
     palette: [Color(0xFF09090B), Color(0xFF52525B), Color(0xFFE4E4E7), Color(0xFFFFFFFF)],
     icon: LucideIcons.maximize2,
@@ -61,9 +72,6 @@ const List<AlbumTemplate> kAlbumTemplates = [
   AlbumTemplate(
     id: 'gentle_pastel',
     title: 'Нежная Акварель & Пастель',
-    subtitle: 'Мягкий и романтичный',
-    tag: 'ТРЕНД',
-    description: 'Мягкие пастельные тона, художественные текстуры и каллиграфические заголовки.',
     primaryColor: Color(0xFFEC4899),
     palette: [Color(0xFFF472B6), Color(0xFFFDE047), Color(0xFF93C5FD), Color(0xFFA7F3D0)],
     icon: LucideIcons.palette,
@@ -71,9 +79,6 @@ const List<AlbumTemplate> kAlbumTemplates = [
   AlbumTemplate(
     id: 'vintage_film',
     title: 'Винтаж & Плёнка 90-х',
-    subtitle: 'Теплый и ламповый',
-    tag: 'РЕТРО',
-    description: 'Тёплая ностальгическая гамма, полароидные рамки и зернистая эстетика аналоговой фотографии.',
     primaryColor: Color(0xFFB45309),
     palette: [Color(0xFF92400E), Color(0xFFF59E0B), Color(0xFFFEF3C7), Color(0xFF451A03)],
     icon: LucideIcons.camera,
@@ -81,9 +86,6 @@ const List<AlbumTemplate> kAlbumTemplates = [
   AlbumTemplate(
     id: 'primary_school',
     title: 'Младшая школа & Первоклашки',
-    subtitle: 'Весёлый и красочный',
-    tag: 'ДЕТСКИЙ',
-    description: 'Красочные рамки, забавные стикеры и жизнерадостные развороты для начальной школы.',
     primaryColor: Color(0xFF6366F1),
     palette: [Color(0xFF6366F1), Color(0xFFF59E0B), Color(0xFFEF4444), Color(0xFF10B981)],
     icon: LucideIcons.smile,
@@ -309,68 +311,33 @@ class _AlbumTemplatesScreenState extends State<AlbumTemplatesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Верхняя плашка: Иконка превью + Тег + Радио-чекмарк
+            // 1. Верхняя строка: Иконка превью + Название + Радио-чекмарк
             Row(
               children: [
                 Container(
-                  width: 38.0,
-                  height: 38.0,
+                  width: 36.0,
+                  height: 36.0,
                   decoration: BoxDecoration(
                     color: template.primaryColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8.0),
                   ),
                   child: Icon(
                     template.icon,
-                    size: 20.0,
+                    size: 19.0,
                     color: template.primaryColor,
                   ),
                 ),
                 const SizedBox(width: 10.0),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              template.title,
-                              style: PicPacTypography.photoCaption.copyWith(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15.0,
-                                color: PicPacColors.textDark,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 6.0),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
-                            decoration: BoxDecoration(
-                              color: isSelected ? PicPacColors.primaryCoralSoft : PicPacColors.surfaceGrey,
-                              borderRadius: BorderRadius.circular(4.0),
-                            ),
-                            child: Text(
-                              template.tag,
-                              style: TextStyle(
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w700,
-                                color: isSelected ? PicPacColors.primaryCoral : PicPacColors.textMuted,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2.0),
-                      Text(
-                        template.subtitle,
-                        style: PicPacTypography.metaInfo.copyWith(
-                          color: PicPacColors.textMuted,
-                          fontSize: 12.0,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    template.title,
+                    style: PicPacTypography.photoCaption.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15.0,
+                      color: PicPacColors.textDark,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 8.0),
@@ -396,20 +363,26 @@ class _AlbumTemplatesScreenState extends State<AlbumTemplatesScreen> {
               ],
             ),
 
-            const SizedBox(height: 10.0),
+            const SizedBox(height: 12.0),
 
-            // Описание шаблона
-            Text(
-              template.description,
-              style: PicPacTypography.metaInfo.copyWith(
-                color: PicPacColors.textDark.withValues(alpha: 0.8),
-                height: 1.35,
+            // 2. Карусель сгенерированных макетов (под названием и над палитрой)
+            SizedBox(
+              height: 98.0,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: template.mockups.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 10.0),
+                itemBuilder: (context, mIdx) {
+                  final mockup = template.mockups[mIdx];
+                  return _buildMockupItem(template, mockup);
+                },
               ),
             ),
 
-            const SizedBox(height: 10.0),
+            const SizedBox(height: 12.0),
 
-            // Цветовая палитра шаблона
+            // 3. Цветовая палитра шаблона
             Row(
               children: [
                 Text(
@@ -441,5 +414,370 @@ class _AlbumTemplatesScreenState extends State<AlbumTemplatesScreen> {
         ),
       ),
     );
+  }
+
+  /// Виджет элемента разворота в карусели макетов
+  Widget _buildMockupItem(AlbumTemplate template, AlbumSpreadMockup mockup) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Миниатюрный разворот книги
+        Container(
+          width: 138.0,
+          height: 74.0,
+          decoration: BoxDecoration(
+            color: PicPacColors.white,
+            borderRadius: BorderRadius.circular(6.0),
+            border: Border.all(
+              color: PicPacColors.borderDefault,
+              width: 0.8,
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0C000000),
+                blurRadius: 3.0,
+                offset: Offset(0, 1),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(5.0),
+            child: Stack(
+              children: [
+                // Страницы разворота (левая и правая)
+                Row(
+                  children: [
+                    Expanded(child: _buildMockupLeftPage(template, mockup.type)),
+                    // Линия сгиба корешка книги
+                    Container(
+                      width: 1.0,
+                      color: const Color(0xFFE2E8F0),
+                    ),
+                    Expanded(child: _buildMockupRightPage(template, mockup.type)),
+                  ],
+                ),
+                // Мягкая тень корешка по центру
+                Center(
+                  child: Container(
+                    width: 8.0,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.black.withValues(alpha: 0.04),
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.04),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 5.0),
+        // Подпись типа разворота
+        Text(
+          mockup.title,
+          style: TextStyle(
+            fontSize: 10.5,
+            fontWeight: FontWeight.w600,
+            color: PicPacColors.textDark.withValues(alpha: 0.8),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Отрисовка левой страницы макета
+  Widget _buildMockupLeftPage(AlbumTemplate template, MockupType type) {
+    switch (type) {
+      case MockupType.cover:
+        // Задняя обложка
+        return Container(
+          color: template.primaryColor.withValues(alpha: 0.07),
+          padding: const EdgeInsets.all(5.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 20.0,
+                height: 3.0,
+                decoration: BoxDecoration(
+                  color: template.primaryColor.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(1.5),
+                ),
+              ),
+              const SizedBox(height: 3.0),
+              Container(
+                width: 14.0,
+                height: 5.0,
+                color: const Color(0xFFCBD5E1),
+              ),
+            ],
+          ),
+        );
+
+      case MockupType.vignette:
+        // 4 мини-портрета (2x2)
+        return Container(
+          color: PicPacColors.surfaceGrey.withValues(alpha: 0.4),
+          padding: const EdgeInsets.all(4.0),
+          child: GridView.count(
+            crossAxisCount: 2,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 3.0,
+            crossAxisSpacing: 3.0,
+            children: List.generate(4, (i) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: template.primaryColor.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(2.0),
+                  border: Border.all(
+                    color: template.primaryColor.withValues(alpha: 0.25),
+                    width: 0.5,
+                  ),
+                ),
+                child: Center(
+                  child: Icon(
+                    LucideIcons.user,
+                    size: 8.0,
+                    color: template.primaryColor.withValues(alpha: 0.6),
+                  ),
+                ),
+              );
+            }),
+          ),
+        );
+
+      case MockupType.reportage:
+        // Крупное фото слева
+        return Container(
+          color: PicPacColors.white,
+          padding: const EdgeInsets.all(4.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: template.palette.length > 1
+                        ? template.palette[1].withValues(alpha: 0.25)
+                        : template.primaryColor.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(3.0),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      LucideIcons.image,
+                      size: 11.0,
+                      color: template.primaryColor.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 3.0),
+              Container(
+                height: 2.5,
+                width: 24.0,
+                color: const Color(0xFFE2E8F0),
+              ),
+            ],
+          ),
+        );
+
+      case MockupType.teachers:
+        // Портрет классного руководителя
+        return Container(
+          color: PicPacColors.surfaceGrey.withValues(alpha: 0.3),
+          padding: const EdgeInsets.all(5.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 24.0,
+                height: 24.0,
+                decoration: BoxDecoration(
+                  color: template.primaryColor.withValues(alpha: 0.16),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: template.primaryColor.withValues(alpha: 0.4),
+                    width: 1.0,
+                  ),
+                ),
+                child: Center(
+                  child: Icon(
+                    LucideIcons.userCheck,
+                    size: 11.0,
+                    color: template.primaryColor,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4.0),
+              Container(
+                width: 28.0,
+                height: 2.5,
+                color: template.primaryColor.withValues(alpha: 0.35),
+              ),
+            ],
+          ),
+        );
+    }
+  }
+
+  /// Отрисовка правой страницы макета
+  Widget _buildMockupRightPage(AlbumTemplate template, MockupType type) {
+    switch (type) {
+      case MockupType.cover:
+        // Лицевая обложка с рамкой и заголовком
+        return Container(
+          color: template.primaryColor,
+          padding: const EdgeInsets.all(5.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 28.0,
+                height: 28.0,
+                decoration: BoxDecoration(
+                  color: PicPacColors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(3.0),
+                  border: Border.all(
+                    color: template.palette.length > 1
+                        ? template.palette[1].withValues(alpha: 0.7)
+                        : PicPacColors.white,
+                    width: 0.8,
+                  ),
+                ),
+                child: Center(
+                  child: Icon(
+                    template.icon,
+                    size: 13.0,
+                    color: PicPacColors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 5.0),
+              Container(
+                width: 34.0,
+                height: 3.0,
+                decoration: BoxDecoration(
+                  color: PicPacColors.white,
+                  borderRadius: BorderRadius.circular(1.5),
+                ),
+              ),
+            ],
+          ),
+        );
+
+      case MockupType.vignette:
+        // 4 мини-портрета (2x2) справа
+        return Container(
+          color: PicPacColors.surfaceGrey.withValues(alpha: 0.4),
+          padding: const EdgeInsets.all(4.0),
+          child: GridView.count(
+            crossAxisCount: 2,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 3.0,
+            crossAxisSpacing: 3.0,
+            children: List.generate(4, (i) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: template.primaryColor.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(2.0),
+                  border: Border.all(
+                    color: template.primaryColor.withValues(alpha: 0.25),
+                    width: 0.5,
+                  ),
+                ),
+                child: Center(
+                  child: Icon(
+                    LucideIcons.user,
+                    size: 8.0,
+                    color: template.primaryColor.withValues(alpha: 0.6),
+                  ),
+                ),
+              );
+            }),
+          ),
+        );
+
+      case MockupType.reportage:
+        // Коллаж из 2 фото справа
+        return Container(
+          color: PicPacColors.white,
+          padding: const EdgeInsets.all(4.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: template.palette.length > 2
+                        ? template.palette[2].withValues(alpha: 0.3)
+                        : template.primaryColor.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(3.0),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 3.0),
+              Expanded(
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: template.palette.first.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(2.0),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 3.0),
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: template.primaryColor.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(2.0),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+
+      case MockupType.teachers:
+        // Пожелания и текст напутствия
+        return Container(
+          color: PicPacColors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 6.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Container(
+                width: 42.0,
+                height: 3.5,
+                decoration: BoxDecoration(
+                  color: template.primaryColor.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(1.0),
+                ),
+              ),
+              Container(width: 48.0, height: 2.0, color: const Color(0xFFE2E8F0)),
+              Container(width: 44.0, height: 2.0, color: const Color(0xFFE2E8F0)),
+              Container(width: 36.0, height: 2.0, color: const Color(0xFFE2E8F0)),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Container(
+                  width: 22.0,
+                  height: 2.0,
+                  color: template.primaryColor.withValues(alpha: 0.4),
+                ),
+              ),
+            ],
+          ),
+        );
+    }
   }
 }
