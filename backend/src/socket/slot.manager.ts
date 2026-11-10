@@ -115,6 +115,26 @@ export class SlotManager {
   }
 
   /**
+   * Очистка фото и данных со слота
+   */
+  public async clearMedia(slotId: string) {
+    const slot = await Slot.findByPk(slotId);
+    if (!slot) {
+      throw new Error('Слот не найден');
+    }
+
+    slot.mediaId = null;
+    slot.caption = null;
+    slot.authorName = null;
+    slot.lockedByUserId = null;
+    slot.lockedByName = null;
+    slot.lockedUntil = null;
+    await slot.save();
+
+    return slot;
+  }
+
+  /**
    * Обновление подписи к фото
    */
   public async updateCaption(slotId: string, caption: string) {

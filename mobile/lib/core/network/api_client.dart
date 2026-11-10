@@ -4,9 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 String get defaultServerUrl {
+  const fromEnv = String.fromEnvironment('API_URL');
+  if (fromEnv.isNotEmpty) return fromEnv;
   if (kIsWeb) return 'http://localhost:3000';
   if (Platform.isAndroid) return 'http://10.0.2.2:3000';
-  return 'http://localhost:3000';
+  // Локальный сетевой IP для одновременного входа с двух устройств (телефон + компьютер/телефон)
+  return 'http://192.168.1.15:3000';
 }
 
 class UserProfile {
@@ -51,10 +54,10 @@ class AlbumData {
   factory AlbumData.fromJson(Map<String, dynamic> json) {
     return AlbumData(
       id: json['id'] as String,
-      name: json['name'] as String,
-      format: json['format'] as String? ?? '21x30',
-      lamination: json['lamination'] as String? ?? 'glossy',
-      spreadsCount: (json['spreadsCount'] as num?)?.toInt() ?? 10,
+      name: (json['title'] ?? json['name']) as String? ?? 'Наш фотоальбом',
+      format: (json['format'] as String?) ?? 'vertical_21x30',
+      lamination: (json['lamination'] as String?) ?? 'glossy',
+      spreadsCount: (json['totalSpreads'] ?? json['spreadsCount'] as num?)?.toInt() ?? 10,
       inviteCode: json['inviteCode'] as String? ?? '',
       status: json['status'] as String? ?? 'draft',
     );
@@ -64,13 +67,15 @@ class AlbumData {
 class ApiClient {
   final Dio _dio;
   String? _token;
-  final String baseUrl;
+  String _baseUrl;
+
+  String get baseUrl => _baseUrl;
 
   ApiClient({String? baseUrl})
-      : baseUrl = baseUrl ?? defaultServerUrl,
+      : _baseUrl = (baseUrl ?? defaultServerUrl).trim().replaceAll(RegExp(r'/+$'), ''),
         _dio = Dio(
           BaseOptions(
-            baseUrl: baseUrl ?? defaultServerUrl,
+            baseUrl: (baseUrl ?? defaultServerUrl).trim().replaceAll(RegExp(r'/+$'), ''),
             connectTimeout: const Duration(seconds: 10),
             receiveTimeout: const Duration(seconds: 15),
             headers: {'Content-Type': 'application/json'},
@@ -90,6 +95,21 @@ class ApiClient {
 
   void setToken(String? token) {
     _token = token;
+  }
+
+  void updateBaseUrl(String newUrl) {
+    final clean = newUrl.trim().replaceAll(RegExp(r'/+$'), '');
+    _baseUrl = clean;
+    _dio.options.baseUrl = clean;
+  }
+
+  Future<bool> checkHealth() async {
+    try {
+      final res = await _dio.get('/health');
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
   }
 
   String resolveUrl(String? path) {
@@ -122,9 +142,11 @@ class ApiClient {
     final response = await _dio.post(
       '/api/albums',
       data: {
+        'title': name.trim(),
         'name': name.trim(),
         'format': format,
         'lamination': lamination,
+        'totalSpreads': spreadsCount,
         'spreadsCount': spreadsCount,
       },
     );
@@ -167,6 +189,63 @@ class ApiClient {
 
     final data = response.data as Map<String, dynamic>;
     return data['media'] as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> assignSlotMedia({
+    required String albumId,
+    required String slotId,
+    required String mediaId,
+    String? caption,
+  }) async {
+    final response = await _dio.post(
+      '/api/albums/$albumId/slots/$slotId/assign',
+      data: {
+        'mediaId': mediaId,
+        'caption': caption,
+      },
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<void> clearSlotMedia({
+    required String albumId,
+    required String slotId,
+  }) async {
+    await _dio.post('/api/albums/$albumId/slots/$slotId/clear');
+  }
+
+  Future<void> updatePageLayout({
+    required String albumId,
+    required int pageNumber,
+    required String layoutType,
+  }) async {
+    await _dio.post(
+      '/api/albums/$albumId/pages/$pageNumber/layout',
+      data: {'layoutType': layoutType},
+    );
+  }
+
+  Future<Map<String, dynamic>> createOrder({
+    required String albumId,
+    required String pickupPointId,
+    required String pickupPointName,
+    required String phone,
+    required String customerName,
+    required String email,
+    String? comment,
+  }) async {
+    final response = await _dio.post(
+      '/api/albums/$albumId/checkout',
+      data: {
+        'pickupPointId': pickupPointId,
+        'pickupPointName': pickupPointName,
+        'phone': phone,
+        'customerName': customerName,
+        'email': email,
+        'comment': comment,
+      },
+    );
+    return response.data as Map<String, dynamic>;
   }
 }
 

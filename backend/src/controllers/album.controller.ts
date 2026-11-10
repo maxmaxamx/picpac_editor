@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware.js';
 import { Album, AlbumMember, Page, Slot, MediaPool, SlotReaction, CoverVote, User } from '../models/index.js';
 import { createAlbumTransaction } from '../services/album.service.js';
+import { io } from '../index.js';
 
 export async function createAlbum(req: AuthenticatedRequest, res: Response) {
   try {
@@ -11,23 +12,30 @@ export async function createAlbum(req: AuthenticatedRequest, res: Response) {
       return;
     }
 
-    const { title, format, lamination, totalSpreads } = req.body;
+    const title = (req.body.title || req.body.name || '').toString().trim();
+    const format = req.body.format || 'vertical_21x30';
+    const lamination = req.body.lamination || 'glossy';
+    const totalSpreads = req.body.totalSpreads || req.body.spreadsCount || 10;
 
-    if (!title || typeof title !== 'string' || title.trim().length === 0) {
-      res.status(400).json({ error: 'Поле title обязательно' });
+    if (!title || title.length === 0) {
+      res.status(400).json({ error: 'Поле title/name обязательно' });
       return;
     }
 
     const album = await createAlbumTransaction({
-      title: title.trim(),
+      title,
       hostUserId: userId,
       format,
       lamination,
-      totalSpreads: totalSpreads ? Number(totalSpreads) : 10,
+      totalSpreads: Number(totalSpreads),
     });
 
+    const albumJson = album.toJSON();
+    (albumJson as any).name = album.title;
+    (albumJson as any).spreadsCount = album.totalSpreads;
+
     res.status(201).json({
-      album,
+      album: albumJson,
       message: 'Альбом успешно создан со всеми страницами и слотами',
     });
   } catch (err: any) {
@@ -73,8 +81,12 @@ export async function joinAlbum(req: AuthenticatedRequest, res: Response) {
       });
     }
 
+    const albumJson = album.toJSON();
+    (albumJson as any).name = album.title;
+    (albumJson as any).spreadsCount = album.totalSpreads;
+
     res.json({
-      album,
+      album: albumJson,
       role: member.role,
       message: 'Вы успешно присоединились к альбому',
     });
@@ -141,10 +153,157 @@ export async function getAlbumFull(req: AuthenticatedRequest, res: Response) {
       return;
     }
 
-    res.json({ album });
+    const albumJson = album.toJSON();
+    (albumJson as any).name = album.title;
+    (albumJson as any).spreadsCount = album.totalSpreads;
+
+    res.json({ album: albumJson });
   } catch (err: any) {
     console.error('Ошибка получения альбома:', err);
     res.status(500).json({ error: 'Не удалось получить данные альбома' });
+  }
+}
+
+export async function assignSlotMedia(req: AuthenticatedRequest, res: Response) {
+  try {
+    const { id: albumId, slotId } = req.params;
+    const { mediaId, caption } = req.body;
+    const userId = req.user?.userId;
+    const displayName = req.user?.displayName || 'Участник';
+
+    const slot = await Slot.findByPk(slotId);
+    if (!slot) {
+      res.status(404).json({ error: 'Слот не найден' });
+      return;
+    }
+
+    slot.mediaId = mediaId;
+    if (caption !== undefined) slot.caption = caption;
+    slot.authorName = displayName;
+    slot.lockedByUserId = null;
+    slot.lockedByName = null;
+    slot.lockedUntil = null;
+    await slot.save();
+
+    const updated = await Slot.findByPk(slotId, {
+      include: [
+        { model: MediaPool, as: 'media' },
+        { model: SlotReaction, as: 'reactions' },
+      ],
+    });
+
+    io.to(albumId).emit('slot:updated', {
+      albumId,
+      slot: updated,
+    });
+
+    res.json({ slot: updated });
+  } catch (err: any) {
+    console.error('Ошибка назначения фото в слот:', err);
+    res.status(500).json({ error: 'Не удалось привязать фото' });
+  }
+}
+
+export async function clearSlotMedia(req: AuthenticatedRequest, res: Response) {
+  try {
+    const { id: albumId, slotId } = req.params;
+
+    const slot = await Slot.findByPk(slotId);
+    if (!slot) {
+      res.status(404).json({ error: 'Слот не найден' });
+      return;
+    }
+
+    slot.mediaId = null;
+    slot.caption = null;
+    slot.authorName = null;
+    slot.lockedByUserId = null;
+    slot.lockedByName = null;
+    slot.lockedUntil = null;
+    await slot.save();
+
+    io.to(albumId).emit('slot:updated', {
+      albumId,
+      slot: {
+        ...slot.toJSON(),
+        media: null,
+      },
+    });
+
+    res.json({ slot });
+  } catch (err: any) {
+    console.error('Ошибка очистки слота:', err);
+    res.status(500).json({ error: 'Не удалось очистить слот' });
+  }
+}
+
+export async function updatePageLayout(req: AuthenticatedRequest, res: Response) {
+  try {
+    const { id: albumId, pageNumber } = req.params;
+    const layout = req.body.layoutType || req.body.layout || 'grid_4';
+
+    const page = await Page.findOne({
+      where: { albumId, pageNumber: Number(pageNumber) },
+    });
+
+    if (!page) {
+      res.status(404).json({ error: 'Страница не найдена' });
+      return;
+    }
+
+    page.layoutType = layout;
+    await page.save();
+
+    io.to(albumId).emit('page:updated', {
+      albumId,
+      pageNumber: Number(pageNumber),
+      layoutType: layout,
+    });
+
+    res.json({ page });
+  } catch (err: any) {
+    console.error('Ошибка смены сетки страницы:', err);
+    res.status(500).json({ error: 'Не удалось сменить сетку' });
+  }
+}
+
+export async function getAlbumMedia(req: AuthenticatedRequest, res: Response) {
+  try {
+    const { id: albumId } = req.params;
+    const media = await MediaPool.findAll({
+      where: { albumId },
+      order: [['createdAt', 'DESC']],
+    });
+    res.json({ media });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Не удалось загрузить медиатеку' });
+  }
+}
+
+export async function createOrder(req: AuthenticatedRequest, res: Response) {
+  try {
+    const { id: albumId } = req.params;
+    const { pickupPointId, pickupPointName, phone, customerName, email, comment } = req.body;
+
+    const album = await Album.findByPk(albumId);
+    if (!album) {
+      res.status(404).json({ error: 'Альбом не найден' });
+      return;
+    }
+
+    const orderNumber = `PP-${Date.now().toString().slice(-6)}`;
+    album.status = 'ordered';
+    await album.save();
+
+    console.log(`📦 [Order Created] Заказ ${orderNumber} для альбома "${album.title}": ${customerName}, ${phone}, ${pickupPointName}`);
+
+    res.status(201).json({
+      orderNumber,
+      message: 'Заказ успешно создан и отправлен в печать picPac.by',
+    });
+  } catch (err: any) {
+    console.error('Ошибка оформления заказа:', err);
+    res.status(500).json({ error: 'Не удалось оформить заказ' });
   }
 }
 

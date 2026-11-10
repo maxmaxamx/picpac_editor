@@ -137,6 +137,79 @@ async function runTests() {
     console.log(`   ✅ Медиа успешно загружено: ${uploadData.media.id}`);
     console.log(`   🖼️ WebP превью: ${uploadData.media.thumbUrl}`);
 
+    // 8. Тест привязки фото к слоту (POST /api/albums/:id/slots/:slotId/assign)
+    const firstSlot = fullAlbum.pages[0].slots[0];
+    console.log('7. Тест привязки фото из пула к слоту разворота...');
+    const assignRes = await fetch(`${baseUrl}/api/albums/${album.id}/slots/${firstSlot.id}/assign`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${hostToken}`,
+      },
+      body: JSON.stringify({
+        mediaId: uploadData.media.id,
+        caption: 'Наш первый звонок',
+      }),
+    });
+    const assignData = await assignRes.json() as any;
+    if (!assignRes.ok || !assignData.slot?.mediaId) {
+      throw new Error(`Ошибка привязки фото к слоту: ${JSON.stringify(assignData)}`);
+    }
+    console.log(`   ✅ Фото ${uploadData.media.id} привязано к слоту ${firstSlot.id}`);
+
+    // 9. Тест смены сетки страницы (POST /api/albums/:id/pages/:pageNumber/layout)
+    console.log('8. Тест смены макета разворота...');
+    const layoutRes = await fetch(`${baseUrl}/api/albums/${album.id}/pages/1/layout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${hostToken}`,
+      },
+      body: JSON.stringify({ layoutType: 'split_2' }),
+    });
+    const layoutData = await layoutRes.json() as any;
+    if (!layoutRes.ok || layoutData.page?.layoutType !== 'split_2') {
+      throw new Error(`Ошибка обновления макета: ${JSON.stringify(layoutData)}`);
+    }
+    console.log(`   ✅ Макет страницы 1 изменен на split_2`);
+
+    // 10. Тест очистки слота (POST /api/albums/:id/slots/:slotId/clear)
+    console.log('9. Тест очистки слота...');
+    const clearRes = await fetch(`${baseUrl}/api/albums/${album.id}/slots/${firstSlot.id}/clear`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${hostToken}`,
+      },
+    });
+    const clearData = await clearRes.json() as any;
+    if (!clearRes.ok || clearData.slot?.mediaId !== null) {
+      throw new Error(`Ошибка очистки слота: ${JSON.stringify(clearData)}`);
+    }
+    console.log(`   ✅ Слот ${firstSlot.id} успешно очищен`);
+
+    // 11. Тест оформления заказа (POST /api/albums/:id/checkout)
+    console.log('10. Тест оформления заказа альбома...');
+    const orderRes = await fetch(`${baseUrl}/api/albums/${album.id}/checkout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${hostToken}`,
+      },
+      body: JSON.stringify({
+        pickupPointId: 'pp_1',
+        pickupPointName: 'picPac Hub • ТЦ Galleria Minsk',
+        phone: '+375 29 111-22-33',
+        customerName: 'Артём Иванов',
+        email: 'artem@picpac.by',
+        comment: 'Срочная печать к выпускному',
+      }),
+    });
+    const orderData = await orderRes.json() as any;
+    if (!orderRes.ok || !orderData.orderNumber) {
+      throw new Error(`Ошибка оформления заказа: ${JSON.stringify(orderData)}`);
+    }
+    console.log(`   ✅ Заказ оформлен! Номер заказа: ${orderData.orderNumber}`);
+
     console.log('\n🎉 ВСЕ ИНТЕГРАЦИОННЫЕ ТЕСТЫ БЭКЕНДА УСПЕШНО ПРОЙДЕНЫ!');
   } finally {
     testServer.close();

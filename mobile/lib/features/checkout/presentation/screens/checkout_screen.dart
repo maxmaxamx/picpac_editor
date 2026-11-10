@@ -33,6 +33,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _commentController = TextEditingController();
 
+  // ignore: unused_field
   int _selectedBottomNavIndex = 1; // Корзина
 
   @override
@@ -277,7 +278,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      // bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
@@ -741,6 +742,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildBottomNavigationBar() {
     return Container(
       decoration: const BoxDecoration(
@@ -766,6 +768,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildNavItem(int index, IconData icon, String label, {String? badge}) {
     final isSelected = index == _selectedBottomNavIndex;
     final color = isSelected ? PicPacColors.primaryCoral : const Color(0xFF64748B);

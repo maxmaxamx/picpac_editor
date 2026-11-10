@@ -31,6 +31,26 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   OnboardingMode _mode = OnboardingMode.join;
   bool _isSubmitting = false;
+  bool _isServerOnline = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding')) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkServerHealth();
+      });
+    }
+  }
+
+  Future<void> _checkServerHealth() async {
+    try {
+      final isUp = await ref.read(apiClientProvider).checkHealth();
+      if (mounted) {
+        setState(() => _isServerOnline = isUp);
+      }
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -222,29 +242,299 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Widget _buildBrandHeader() {
-    return Center(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'picPac',
-            style: PicPacTypography.h1Title.copyWith(
-              fontSize: 34.0,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
+    final apiClient = ref.watch(apiClientProvider);
+    final displayHost = apiClient.baseUrl.replaceAll(RegExp(r'^https?://'), '');
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'picPac',
+              style: PicPacTypography.h1Title.copyWith(
+                fontSize: 34.0,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+              ),
+            ),
+            Text(
+              '.by',
+              style: PicPacTypography.h1Title.copyWith(
+                fontSize: 34.0,
+                fontWeight: FontWeight.w800,
+                color: PicPacColors.primaryCoral,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8.0),
+        GestureDetector(
+          onTap: _openServerSettingsSheet,
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+            decoration: BoxDecoration(
+              color: PicPacColors.surfaceGrey,
+              borderRadius: BorderRadius.circular(16.0),
+              border: Border.all(color: PicPacColors.borderDefault),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 7.0,
+                  height: 7.0,
+                  decoration: BoxDecoration(
+                    color: _isServerOnline ? PicPacColors.onlineGreen : PicPacColors.textMuted,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6.0),
+                Text(
+                  displayHost,
+                  style: PicPacTypography.metaInfo.copyWith(
+                    fontSize: 11.5,
+                    color: PicPacColors.textDark,
+                  ),
+                ),
+                const SizedBox(width: 4.0),
+                const Icon(
+                  LucideIcons.slidersHorizontal,
+                  size: 12.0,
+                  color: PicPacColors.textMuted,
+                ),
+              ],
             ),
           ),
-          Text(
-            '.by',
-            style: PicPacTypography.h1Title.copyWith(
-              fontSize: 34.0,
-              fontWeight: FontWeight.w800,
-              color: PicPacColors.primaryCoral,
-              letterSpacing: -0.5,
-            ),
-          ),
-        ],
+        ),
+      ],
+    );
+  }
+
+  void _openServerSettingsSheet() {
+    final apiClient = ref.read(apiClientProvider);
+    final urlController = TextEditingController(text: apiClient.baseUrl);
+    bool? testResult;
+    bool isTesting = false;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: PicPacColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
       ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 20.0,
+                  right: 20.0,
+                  top: 20.0,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 20.0,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 36.0,
+                        height: 4.0,
+                        margin: const EdgeInsets.only(bottom: 16.0),
+                        decoration: BoxDecoration(
+                          color: PicPacColors.borderDefault,
+                          borderRadius: BorderRadius.circular(2.0),
+                        ),
+                      ),
+                    ),
+                    Text(
+                      'Подключение к серверу',
+                      style: PicPacTypography.h2Section,
+                    ),
+                    const SizedBox(height: 6.0),
+                    Text(
+                      'Для одновременной работы с двух устройств укажите адрес бэкенда в общей Wi-Fi сети:',
+                      style: PicPacTypography.metaInfo,
+                    ),
+                    const SizedBox(height: 14.0),
+                    Container(
+                      height: 48.0,
+                      decoration: BoxDecoration(
+                        color: PicPacColors.surfaceGrey,
+                        borderRadius: BorderRadius.circular(8.0),
+                        border: Border.all(color: PicPacColors.borderDefault),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                      alignment: Alignment.centerLeft,
+                      child: TextField(
+                        controller: urlController,
+                        style: PicPacTypography.buttonText.copyWith(
+                          color: PicPacColors.textDark,
+                          fontSize: 14.0,
+                        ),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          hintText: 'http://192.168.1.15:3000',
+                          isDense: true,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10.0),
+                    Wrap(
+                      spacing: 8.0,
+                      runSpacing: 8.0,
+                      children: [
+                        _buildPresetChip(
+                          'Wi-Fi (192.168.1.15)',
+                          'http://192.168.1.15:3000',
+                          urlController,
+                        ),
+                        _buildPresetChip(
+                          'Localhost',
+                          'http://localhost:3000',
+                          urlController,
+                        ),
+                        _buildPresetChip(
+                          'Android Emul',
+                          'http://10.0.2.2:3000',
+                          urlController,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16.0),
+                    if (testResult != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                        margin: const EdgeInsets.only(bottom: 12.0),
+                        decoration: BoxDecoration(
+                          color: testResult!
+                              ? const Color(0xFFDCFCE7)
+                              : const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              testResult! ? LucideIcons.circleCheck : LucideIcons.circleAlert,
+                              size: 16.0,
+                              color: testResult!
+                                  ? const Color(0xFF16A34A)
+                                  : const Color(0xFFDC2626),
+                            ),
+                            const SizedBox(width: 8.0),
+                            Expanded(
+                              child: Text(
+                                testResult!
+                                    ? 'Сервер доступен и отвечает!'
+                                    : 'Сервер недоступен по этому адресу',
+                                style: PicPacTypography.metaInfo.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: testResult!
+                                      ? const Color(0xFF16A34A)
+                                      : const Color(0xFFDC2626),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: PicPacColors.borderDefault),
+                              padding: const EdgeInsets.symmetric(vertical: 12.0),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                            ),
+                            onPressed: isTesting
+                                ? null
+                                : () async {
+                                    setSheetState(() => isTesting = true);
+                                    apiClient.updateBaseUrl(urlController.text.trim());
+                                    final up = await apiClient.checkHealth();
+                                    if (mounted) {
+                                      setSheetState(() {
+                                        isTesting = false;
+                                        testResult = up;
+                                      });
+                                      setState(() => _isServerOnline = up);
+                                    }
+                                  },
+                            child: isTesting
+                                ? const SizedBox(
+                                    width: 18.0,
+                                    height: 18.0,
+                                    child: CircularProgressIndicator(strokeWidth: 2.0),
+                                  )
+                                : Text(
+                                    'Проверить связь',
+                                    style: PicPacTypography.buttonText.copyWith(
+                                      color: PicPacColors.textDark,
+                                      fontSize: 13.0,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(width: 10.0),
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: PicPacColors.primaryCoral,
+                              padding: const EdgeInsets.symmetric(vertical: 12.0),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              elevation: 0,
+                            ),
+                            onPressed: () {
+                              final newUrl = urlController.text.trim();
+                              apiClient.updateBaseUrl(newUrl);
+                              _checkServerHealth();
+                              Navigator.pop(sheetContext);
+                              _showToast('Сервер установлен: $newUrl');
+                            },
+                            child: Text(
+                              'Применить',
+                              style: PicPacTypography.buttonText.copyWith(
+                                color: PicPacColors.white,
+                                fontSize: 13.0,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildPresetChip(String label, String url, TextEditingController controller) {
+    return ActionChip(
+      label: Text(
+        label,
+        style: PicPacTypography.metaInfo.copyWith(fontSize: 11.5),
+      ),
+      backgroundColor: PicPacColors.surfaceGrey,
+      side: const BorderSide(color: PicPacColors.borderDefault),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+      onPressed: () {
+        controller.text = url;
+      },
     );
   }
 

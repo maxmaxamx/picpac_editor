@@ -37,6 +37,7 @@ class SocketService {
   final _reactionsUpdatedController = StreamController<Map<String, dynamic>>.broadcast();
   final _coverVotedController = StreamController<Map<String, dynamic>>.broadcast();
   final _mediaAddedController = StreamController<Map<String, dynamic>>.broadcast();
+  final _pageUpdatedController = StreamController<Map<String, dynamic>>.broadcast();
   final _connectionStateController = StreamController<bool>.broadcast();
 
   Stream<List<OnlineUser>> get presenceStream => _presenceController.stream;
@@ -44,6 +45,7 @@ class SocketService {
   Stream<Map<String, dynamic>> get reactionsUpdatedStream => _reactionsUpdatedController.stream;
   Stream<Map<String, dynamic>> get coverVotedStream => _coverVotedController.stream;
   Stream<Map<String, dynamic>> get mediaAddedStream => _mediaAddedController.stream;
+  Stream<Map<String, dynamic>> get pageUpdatedStream => _pageUpdatedController.stream;
   Stream<bool> get connectionStateStream => _connectionStateController.stream;
 
   bool get isConnected => _socket?.connected ?? false;
@@ -124,6 +126,32 @@ class SocketService {
       if (data is Map && data['media'] is Map) {
         _mediaAddedController.add(Map<String, dynamic>.from(data['media'] as Map));
       }
+    });
+
+    socket.on('page:updated', (data) {
+      if (data is Map) {
+        _pageUpdatedController.add(Map<String, dynamic>.from(data));
+      }
+    });
+  }
+
+  void clearMedia(String slotId) {
+    if (_socket == null || _currentAlbumId == null) return;
+    _socket!.emit('slot:clear_media', {
+      'albumId': _currentAlbumId,
+      'slotId': slotId,
+    });
+  }
+
+  void updatePageLayout({
+    required int pageNumber,
+    required String layout,
+  }) {
+    if (_socket == null || _currentAlbumId == null) return;
+    _socket!.emit('page:update_layout', {
+      'albumId': _currentAlbumId,
+      'pageNumber': pageNumber,
+      'layout': layout,
     });
   }
 

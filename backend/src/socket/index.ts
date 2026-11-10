@@ -1,6 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { presenceManager } from './presence.manager.js';
 import { slotManager } from './slot.manager.js';
+import { Page } from '../models/index.js';
 
 export function setupSocketHandlers(io: Server) {
   io.on('connection', (socket: Socket) => {
@@ -122,7 +123,49 @@ export function setupSocketHandlers(io: Server) {
       }
     );
 
-    // 5. Обновление подписи к фото
+    // 5. Очистка слота
+    socket.on('slot:clear_media', async ({ albumId, slotId }: { albumId: string; slotId: string }) => {
+      try {
+        const updatedSlot = await slotManager.clearMedia(slotId);
+        io.to(albumId).emit('slot:updated', {
+          albumId,
+          slot: {
+            ...updatedSlot.toJSON(),
+            media: null,
+          },
+        });
+        console.log(`🗑️ [Slot Clear] Слот ${slotId} очищен`);
+      } catch (err: any) {
+        console.error('Ошибка очистки слота:', err);
+      }
+    });
+
+    // 6. Смена сетки страницы (Layout)
+    socket.on(
+      'page:update_layout',
+      async ({ albumId, pageNumber, layout }: { albumId: string; pageNumber: number; layout: string }) => {
+        try {
+          const page = await Page.findOne({
+            where: { albumId, pageNumber },
+          });
+          if (page) {
+            page.layoutType = layout as any;
+            await page.save();
+
+            io.to(albumId).emit('page:updated', {
+              albumId,
+              pageNumber,
+              layout,
+            });
+            console.log(`📐 [Page Layout] Страница ${pageNumber} изменена на ${layout}`);
+          }
+        } catch (err: any) {
+          console.error('Ошибка изменения сетки:', err);
+        }
+      }
+    );
+
+    // 7. Обновление подписи к фото
     socket.on(
       'slot:update_caption',
       async ({ albumId, slotId, caption }: { albumId: string; slotId: string; caption: string }) => {

@@ -88,6 +88,7 @@ class EditorController extends Notifier<EditorState> {
   StreamSubscription? _slotUpdatedSub;
   StreamSubscription? _reactionsUpdatedSub;
   StreamSubscription? _mediaAddedSub;
+  StreamSubscription? _pageUpdatedSub;
   StreamSubscription? _connectionSub;
 
   ApiClient get _apiClient => ref.read(apiClientProvider);
@@ -108,6 +109,7 @@ class EditorController extends Notifier<EditorState> {
     _slotUpdatedSub?.cancel();
     _reactionsUpdatedSub?.cancel();
     _mediaAddedSub?.cancel();
+    _pageUpdatedSub?.cancel();
     _connectionSub?.cancel();
   }
 
@@ -143,8 +145,8 @@ class EditorController extends Notifier<EditorState> {
       final rawMediaPool = (albumData['mediaPool'] as List?) ?? [];
       final rawMembers = (albumData['members'] as List?) ?? [];
       final format = albumData['format'] as String? ?? '21x30';
-      final spreadsCount = (albumData['spreadsCount'] as num?)?.toInt() ?? 10;
-      final albumName = albumData['name'] as String? ?? 'Наш фотоальбом';
+      final spreadsCount = (albumData['spreadsCount'] ?? albumData['totalSpreads'] as num?)?.toInt() ?? 10;
+      final albumName = (albumData['name'] ?? albumData['title']) as String? ?? 'Наш фотоальбом';
       final inviteCode = albumData['inviteCode'] as String? ?? '';
 
       final double calculatedAspectRatio = format == '20x20' ? 1.0 : (3.0 / 4.0);
@@ -319,6 +321,16 @@ class EditorController extends Notifier<EditorState> {
         poolPhotos: [newItem, ...state.poolPhotos.where((p) => p.id != newItem.id)],
       );
     });
+
+    // Слушаем изменение сетки страниц от других участников
+    _pageUpdatedSub = _socketService.pageUpdatedStream.listen((pageData) {
+      final pageNum = (pageData['pageNumber'] as num?)?.toInt();
+      final layout = pageData['layout'] as String? ?? pageData['layoutType'] as String?;
+      if (pageNum != null && layout != null) {
+        final slotsCount = layout == 'single' ? 1 : (layout == 'split_2' ? 2 : 4);
+        _applyPageLayoutLocal(pageNum, slotsCount);
+      }
+    });
   }
 
   void _applySlotUpdate(Map<String, dynamic> slotData) {
@@ -419,13 +431,26 @@ class EditorController extends Notifier<EditorState> {
     final selectedId = state.selectedSlotId;
     if (selectedId == null) return;
 
+    // 1. WebSocket sync
     _socketService.assignMedia(
       slotId: selectedId,
       mediaId: photo.id,
       caption: 'Фото из пула',
     );
 
-    // Оптимистичное локальное обновление
+    // 2. HTTP sync
+    if (state.albumId.isNotEmpty) {
+      _apiClient
+          .assignSlotMedia(
+            albumId: state.albumId,
+            slotId: selectedId,
+            mediaId: photo.id,
+            caption: 'Фото из пула',
+          )
+          .catchError((_) => <String, dynamic>{});
+    }
+
+    // 3. Оптимистичное локальное обновление
     _updateSlotOptimisticAssigned(selectedId, photo);
     state = state.copyWith(clearSelectedSlot: true);
   }
@@ -470,6 +495,15 @@ class EditorController extends Notifier<EditorState> {
   }
 
   void clearSlot(String slotId) {
+    // 1. WebSocket sync
+    _socketService.clearMedia(slotId);
+
+    // 2. HTTP sync
+    if (state.albumId.isNotEmpty) {
+      _apiClient.clearSlotMedia(albumId: state.albumId, slotId: slotId).catchError((_) {});
+    }
+
+    // 3. Local optimistic update
     final updatedPages = state.pages.map((p) {
       return PageModel(
         pageNumber: p.pageNumber,
@@ -496,12 +530,34 @@ class EditorController extends Notifier<EditorState> {
       pages: updatedPages,
       clearSelectedSlot: state.selectedSlotId == slotId,
     );
-
-    _socketService.unlockSlot(slotId);
   }
 
   void setPageLayout(int pageNumber, int slotsCount) {
     final targetCount = slotsCount.clamp(1, 4);
+    final layoutType = targetCount == 1 ? 'single' : (targetCount == 2 ? 'split_2' : 'grid_4');
+
+    // 1. WebSocket sync
+    _socketService.updatePageLayout(
+      pageNumber: pageNumber,
+      layout: layoutType,
+    );
+
+    // 2. HTTP sync
+    if (state.albumId.isNotEmpty) {
+      _apiClient
+          .updatePageLayout(
+            albumId: state.albumId,
+            pageNumber: pageNumber,
+            layoutType: layoutType,
+          )
+          .catchError((_) => <String, dynamic>{});
+    }
+
+    // 3. Local update
+    _applyPageLayoutLocal(pageNumber, targetCount);
+  }
+
+  void _applyPageLayoutLocal(int pageNumber, int targetCount) {
     final updatedPages = state.pages.map((p) {
       if (p.pageNumber != pageNumber) return p;
 
@@ -538,6 +594,28 @@ class EditorController extends Notifier<EditorState> {
     List<int>? fileBytes,
     String? fileName,
   }) async {
+    if (fileBytes != null && fileName != null && state.albumId.isNotEmpty) {
+      try {
+        final mediaData = await _apiClient.uploadMedia(
+          albumId: state.albumId,
+          fileBytes: fileBytes,
+          fileName: fileName,
+        );
+        final thumb = mediaData['thumbUrl'] as String? ?? mediaData['originalUrl'] as String?;
+        final uploadedItem = MediaPoolItem(
+          id: mediaData['id'] as String,
+          imageUrl: _apiClient.resolveUrl(thumb),
+          uploaderName: mediaData['uploaderName'] as String? ?? uploaderName,
+        );
+        state = state.copyWith(
+          poolPhotos: [uploadedItem, ...state.poolPhotos.where((p) => p.id != uploadedItem.id)],
+        );
+        return;
+      } catch (e) {
+        // Fallback to local
+      }
+    }
+
     final newItem = MediaPoolItem(
       id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
       imageUrl: imageUrl,
@@ -547,10 +625,6 @@ class EditorController extends Notifier<EditorState> {
     state = state.copyWith(
       poolPhotos: [newItem, ...state.poolPhotos.where((p) => p.id != newItem.id)],
     );
-
-    if (fileBytes != null && fileName != null && state.albumId.isNotEmpty) {
-      await uploadPhoto(fileBytes: fileBytes, fileName: fileName);
-    }
   }
 
   Future<void> uploadPhoto({
