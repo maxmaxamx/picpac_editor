@@ -551,90 +551,189 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
     _showToast(context, 'Школьное фото добавлено в пул альбома!');
   }
 
-  /// Выбор сетки страницы (1, 2, 3 или 4 слота)
+  /// Выбор сетки страницы (разнообразные дизайнерские макеты)
   void _openLayoutSelectorSheet() {
     final state = ref.read(editorControllerProvider);
     final currentPage = state.currentPage;
+    final currentLayout = currentPage.layoutType;
     final currentSlotsCount = currentPage.slots.length;
 
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: PicPacColors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
       ),
       builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36.0,
-                    height: 4.0,
-                    margin: const EdgeInsets.only(bottom: 16.0),
-                    decoration: BoxDecoration(
-                      color: PicPacColors.borderDefault,
-                      borderRadius: BorderRadius.circular(2.0),
+        return DraggableScrollableSheet(
+          initialChildSize: 0.75,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                    Center(
+                      child: Container(
+                        width: 36.0,
+                        height: 4.0,
+                        margin: const EdgeInsets.only(bottom: 14.0),
+                        decoration: BoxDecoration(
+                          color: PicPacColors.borderDefault,
+                          borderRadius: BorderRadius.circular(2.0),
+                        ),
+                      ),
                     ),
-                  ),
+                    Text(
+                      'Сетка страницы ${currentPage.pageNumber}',
+                      style: PicPacTypography.h2Section,
+                    ),
+                    const SizedBox(height: 6.0),
+                    Text(
+                      'Выберите расположение и стиль фотографий:',
+                      style: PicPacTypography.photoCaption,
+                    ),
+                    const SizedBox(height: 16.0),
+
+                    // Одиночные фото
+                    _buildLayoutCategoryHeader('1 ФОТОГРАФИЯ (АКЦЕНТ)'),
+                    _buildLayoutOption(
+                      title: '1 фото на всю страницу',
+                      subtitle: 'Полностраничный панорамный акцент',
+                      layout: 'single_full',
+                      badgeText: '1',
+                      isSelected: currentLayout == 'single_full' || (currentSlotsCount == 1 && currentLayout != 'hero_centered'),
+                      sheetContext: sheetContext,
+                    ),
+                    const SizedBox(height: 8.0),
+                    _buildLayoutOption(
+                      title: '1 фото с паспарту',
+                      subtitle: 'Элегантные широкие поля в стиле арт-альбома',
+                      layout: 'hero_centered',
+                      badgeText: '1',
+                      isSelected: currentLayout == 'hero_centered',
+                      sheetContext: sheetContext,
+                    ),
+                    const SizedBox(height: 16.0),
+
+                    // 2 фото
+                    _buildLayoutCategoryHeader('2 ФОТОГРАФИИ'),
+                    _buildLayoutOption(
+                      title: '2 фото вертикально',
+                      subtitle: 'Два стройных портрета рядом (колонки)',
+                      layout: 'split_vertical_2',
+                      badgeText: '2',
+                      isSelected: currentLayout == 'split_vertical_2',
+                      sheetContext: sheetContext,
+                    ),
+                    const SizedBox(height: 8.0),
+                    _buildLayoutOption(
+                      title: '2 фото горизонтально',
+                      subtitle: 'Две фотографии друг над другом',
+                      layout: 'split_horizontal_2',
+                      badgeText: '2',
+                      isSelected: currentLayout == 'split_horizontal_2',
+                      sheetContext: sheetContext,
+                    ),
+                    const SizedBox(height: 8.0),
+                    _buildLayoutOption(
+                      title: 'Журнальный заголовок + фото',
+                      subtitle: 'Стильный крупный слоган (GO, BOYS!) и 2 фото',
+                      layout: 'editorial_quote',
+                      badgeText: '2',
+                      isSelected: currentLayout == 'editorial_quote',
+                      sheetContext: sheetContext,
+                    ),
+                    const SizedBox(height: 16.0),
+
+                    // 3 фото
+                    _buildLayoutCategoryHeader('3 ФОТОГРАФИИ (КОЛЛАЖИ)'),
+                    _buildLayoutOption(
+                      title: 'Шахматный коллаж (LET\'S GO)',
+                      subtitle: '3 фото в шахматном порядке с типографикой',
+                      layout: 'checkerboard_3',
+                      badgeText: '3',
+                      isSelected: currentLayout == 'checkerboard_3',
+                      sheetContext: sheetContext,
+                    ),
+                    const SizedBox(height: 8.0),
+                    _buildLayoutOption(
+                      title: '3 фото (1 большое + 2 малых)',
+                      subtitle: 'Панорамный верхний снимок и два внизу',
+                      layout: 'hero_top_split_bottom_3',
+                      badgeText: '3',
+                      isSelected: currentLayout == 'hero_top_split_bottom_3',
+                      sheetContext: sheetContext,
+                    ),
+                    const SizedBox(height: 8.0),
+                    _buildLayoutOption(
+                      title: '3 фото полосами',
+                      subtitle: 'Три вертикальных портрета рядом в ряд',
+                      layout: 'split_vertical_3',
+                      badgeText: '3',
+                      isSelected: currentLayout == 'split_vertical_3',
+                      sheetContext: sheetContext,
+                    ),
+                    const SizedBox(height: 16.0),
+
+                    // 4 фото
+                    _buildLayoutCategoryHeader('4 ФОТОГРАФИИ (ГРУППОВЫЕ)'),
+                    _buildLayoutOption(
+                      title: '1 широкое + 3 портрета внизу',
+                      subtitle: 'Широкое фото сверху и 3 портрета в ряд снизу',
+                      layout: 'hero_top_trio_4',
+                      badgeText: '4',
+                      isSelected: currentLayout == 'hero_top_trio_4',
+                      sheetContext: sheetContext,
+                    ),
+                    const SizedBox(height: 8.0),
+                    _buildLayoutOption(
+                      title: '4 фото (сетка 2×2)',
+                      subtitle: 'Классическое расположение для группы',
+                      layout: 'grid_4',
+                      badgeText: '4',
+                      isSelected: currentLayout == 'grid_4',
+                      sheetContext: sheetContext,
+                    ),
+                    const SizedBox(height: 16.0),
+                  ],
                 ),
-                Text(
-                  'Сетка страницы ${currentPage.pageNumber}',
-                  style: PicPacTypography.h2Section,
-                ),
-                const SizedBox(height: 8.0),
-                Text(
-                  'Выберите количество фото на текущей странице:',
-                  style: PicPacTypography.photoCaption,
-                ),
-                const SizedBox(height: 16.0),
-                _buildLayoutOption(
-                  title: '1 фото на всю страницу',
-                  subtitle: 'Одно главное крупное акцентное фото',
-                  slotsCount: 1,
-                  isSelected: currentSlotsCount == 1,
-                  sheetContext: sheetContext,
-                ),
-                const SizedBox(height: 8.0),
-                _buildLayoutOption(
-                  title: '2 фото вертикально',
-                  subtitle: 'Две фотографии друг над другом',
-                  slotsCount: 2,
-                  isSelected: currentSlotsCount == 2,
-                  sheetContext: sheetContext,
-                ),
-                const SizedBox(height: 8.0),
-                _buildLayoutOption(
-                  title: '3 фото (1 большое + 2 малых)',
-                  subtitle: 'Панорамный верхний снимок и два внизу',
-                  slotsCount: 3,
-                  isSelected: currentSlotsCount == 3,
-                  sheetContext: sheetContext,
-                ),
-                const SizedBox(height: 8.0),
-                _buildLayoutOption(
-                  title: '4 фото (сетка 2×2)',
-                  subtitle: 'Классическое расположение для группы',
-                  slotsCount: 4,
-                  isSelected: currentSlotsCount >= 4,
-                  sheetContext: sheetContext,
-                ),
-              ],
+              ),
             ),
-          ),
+          );
+          },
         );
       },
+    );
+  }
+
+  Widget _buildLayoutCategoryHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0, top: 4.0),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+          color: PicPacColors.textMuted,
+        ),
+      ),
     );
   }
 
   Widget _buildLayoutOption({
     required String title,
     required String subtitle,
-    required int slotsCount,
+    required dynamic layout,
+    required String badgeText,
     required bool isSelected,
     required BuildContext sheetContext,
   }) {
@@ -642,8 +741,8 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
       onTap: () {
         Navigator.pop(sheetContext);
         final currentPageNum = ref.read(editorControllerProvider).currentPageNumber;
-        ref.read(editorControllerProvider.notifier).setPageLayout(currentPageNum, slotsCount);
-        _showToast(context, 'Сетка страницы изменена: $slotsCount фото');
+        ref.read(editorControllerProvider.notifier).setPageLayout(currentPageNum, layout);
+        _showToast(context, 'Сетка страницы изменена: $title');
       },
       leading: Container(
         width: 36.0,
@@ -654,11 +753,11 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
         ),
         alignment: Alignment.center,
         child: Text(
-          '$slotsCount',
+          badgeText,
           style: TextStyle(
             color: isSelected ? PicPacColors.primaryCoral : PicPacColors.textDark,
             fontWeight: FontWeight.w700,
-            fontSize: 16.0,
+            fontSize: 15.0,
           ),
         ),
       ),
@@ -667,6 +766,7 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
         style: PicPacTypography.buttonTextDark.copyWith(
           color: isSelected ? PicPacColors.primaryCoral : PicPacColors.textDark,
           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+          fontSize: 13.5,
         ),
       ),
       subtitle: Text(subtitle, style: PicPacTypography.metaInfo),

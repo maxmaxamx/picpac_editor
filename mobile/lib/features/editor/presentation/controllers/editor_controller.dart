@@ -253,9 +253,16 @@ class EditorController extends Notifier<EditorState> {
           );
         }).toList();
 
+        final layoutType = pMap['layoutType'] as String? ?? 'grid_4';
+        final headline = pMap['headline'] as String?;
+        final subhead = pMap['subhead'] as String?;
+
         return PageModel(
           pageNumber: pageNum,
           side: side,
+          layoutType: layoutType,
+          headline: headline,
+          subhead: subhead,
           slots: mappedSlots,
         );
       }).toList();
@@ -613,9 +620,56 @@ class EditorController extends Notifier<EditorState> {
     );
   }
 
-  void setPageLayout(int pageNumber, int slotsCount) {
-    final targetCount = slotsCount.clamp(1, 4);
-    final layoutType = targetCount == 1 ? 'single' : (targetCount == 2 ? 'split_2' : 'grid_4');
+  void setPageLayout(
+    int pageNumber,
+    dynamic layoutOrCount, {
+    String? headline,
+    String? subhead,
+  }) {
+    String layoutType = 'grid_4';
+    int targetCount = 4;
+
+    if (layoutOrCount is int) {
+      targetCount = layoutOrCount.clamp(1, 4);
+      switch (targetCount) {
+        case 1:
+          layoutType = 'single_full';
+          break;
+        case 2:
+          layoutType = 'split_vertical_2';
+          break;
+        case 3:
+          layoutType = 'hero_top_split_bottom_3';
+          break;
+        case 4:
+        default:
+          layoutType = 'grid_4';
+          break;
+      }
+    } else if (layoutOrCount is String) {
+      layoutType = layoutOrCount;
+      switch (layoutType) {
+        case 'single_full':
+        case 'hero_centered':
+          targetCount = 1;
+          break;
+        case 'split_vertical_2':
+        case 'split_horizontal_2':
+        case 'editorial_quote':
+          targetCount = 2;
+          break;
+        case 'split_vertical_3':
+        case 'checkerboard_3':
+        case 'hero_top_split_bottom_3':
+          targetCount = 3;
+          break;
+        case 'hero_top_trio_4':
+        case 'grid_4':
+        default:
+          targetCount = 4;
+          break;
+      }
+    }
 
     // 1. WebSocket sync
     _socketService.updatePageLayout(
@@ -635,10 +689,22 @@ class EditorController extends Notifier<EditorState> {
     }
 
     // 3. Local update
-    _applyPageLayoutLocal(pageNumber, targetCount);
+    _applyPageLayoutLocal(
+      pageNumber,
+      targetCount,
+      layoutType: layoutType,
+      headline: headline,
+      subhead: subhead,
+    );
   }
 
-  void _applyPageLayoutLocal(int pageNumber, int targetCount) {
+  void _applyPageLayoutLocal(
+    int pageNumber,
+    int targetCount, {
+    String layoutType = 'grid_4',
+    String? headline,
+    String? subhead,
+  }) {
     final updatedPages = state.pages.map((p) {
       if (p.pageNumber != pageNumber) return p;
 
@@ -662,6 +728,9 @@ class EditorController extends Notifier<EditorState> {
       return PageModel(
         pageNumber: p.pageNumber,
         side: p.side,
+        layoutType: layoutType,
+        headline: headline ?? p.headline,
+        subhead: subhead ?? p.subhead,
         slots: newSlots,
       );
     }).toList();

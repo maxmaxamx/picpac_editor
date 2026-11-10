@@ -19,6 +19,12 @@ class AlbumTemplateStyle {
   final String fontTag;
   final IconData icon;
 
+  // Типографика и акценты для журнальных макетов (Editorial & Typography Spreads)
+  final String defaultHeadline;
+  final String defaultSubhead;
+  final Color headlineColor;
+  final double headlineLetterSpacing;
+
   // Стиль обложки (Cover Presentation)
   final Color coverBackgroundColor;
   final Color coverTextColor;
@@ -42,6 +48,10 @@ class AlbumTemplateStyle {
     required this.headerBadgeTextColor,
     required this.fontTag,
     required this.icon,
+    required this.defaultHeadline,
+    required this.defaultSubhead,
+    required this.headlineColor,
+    this.headlineLetterSpacing = 0.5,
     required this.coverBackgroundColor,
     required this.coverTextColor,
     required this.coverAccentColor,
@@ -68,6 +78,10 @@ class AlbumTemplateStyle {
           headerBadgeTextColor: Color(0xFFD4AF37),
           fontTag: 'CLASSIC GOLD',
           icon: LucideIcons.graduationCap,
+          defaultHeadline: 'CLASS OF 2026',
+          defaultSubhead: 'Выпускной альбом • Память на всю жизнь',
+          headlineColor: Color(0xFF1E293B),
+          headlineLetterSpacing: 2.0,
           coverBackgroundColor: Color(0xFF0F172A), // Темно-синий бархат
           coverTextColor: Color(0xFFF8FAFC),
           coverAccentColor: Color(0xFFD4AF37),
@@ -92,6 +106,10 @@ class AlbumTemplateStyle {
           headerBadgeTextColor: Color(0xFFFFFFFF),
           fontTag: 'MONOCHROME ARCHIVE',
           icon: LucideIcons.maximize2,
+          defaultHeadline: 'MOMENTS',
+          defaultSubhead: 'archive / school years edition',
+          headlineColor: Color(0xFF18181B),
+          headlineLetterSpacing: 3.0,
           coverBackgroundColor: Color(0xFF09090B), // Чистый графитовый
           coverTextColor: Color(0xFFFFFFFF),
           coverAccentColor: Color(0xFFE4E4E7),
@@ -116,6 +134,10 @@ class AlbumTemplateStyle {
           headerBadgeTextColor: Color(0xFFBE185D),
           fontTag: 'SOFT PASTEL',
           icon: LucideIcons.palette,
+          defaultHeadline: 'Warm Memories',
+          defaultSubhead: 'лучшие школьные моменты вместе',
+          headlineColor: Color(0xFF9D174D),
+          headlineLetterSpacing: 1.0,
           coverBackgroundColor: Color(0xFFFDF2F8),
           coverTextColor: Color(0xFF831843),
           coverAccentColor: Color(0xFFEC4899),
@@ -140,6 +162,10 @@ class AlbumTemplateStyle {
           headerBadgeTextColor: Color(0xFFFEF3C7),
           fontTag: 'VINTAGE 35MM',
           icon: LucideIcons.camera,
+          defaultHeadline: 'ANALOG 35MM',
+          defaultSubhead: 'пленочные хроники нашего выпуска',
+          headlineColor: Color(0xFF78350F),
+          headlineLetterSpacing: 1.8,
           coverBackgroundColor: Color(0xFF382213), // Винтажная кожа
           coverTextColor: Color(0xFFFEF3C7),
           coverAccentColor: Color(0xFFF59E0B),
@@ -164,6 +190,10 @@ class AlbumTemplateStyle {
           headerBadgeTextColor: Color(0xFF4338CA),
           fontTag: 'PRIMARY SCHOOL',
           icon: LucideIcons.smile,
+          defaultHeadline: 'НАШ ЛЮБИМЫЙ КЛАСС!',
+          defaultSubhead: 'первые шаги к большим победам 🚀',
+          headlineColor: Color(0xFF312E81),
+          headlineLetterSpacing: 0.8,
           coverBackgroundColor: Color(0xFF312E81),
           coverTextColor: Color(0xFFFFFFFF),
           coverAccentColor: Color(0xFFFBBF24),
@@ -189,6 +219,10 @@ class AlbumTemplateStyle {
           headerBadgeTextColor: Color(0xFFFF4D4D),
           fontTag: 'MODERN DRIVE',
           icon: LucideIcons.sparkles,
+          defaultHeadline: 'GO, BOYS!',
+          defaultSubhead: '(да, это твой выпускной)',
+          headlineColor: Color(0xFF1E293B),
+          headlineLetterSpacing: 0.6,
           coverBackgroundColor: Color(0xFF1A1A1A),
           coverTextColor: Color(0xFFFFFFFF),
           coverAccentColor: Color(0xFFFF4D4D),
@@ -198,3 +232,4 @@ class AlbumTemplateStyle {
     }
   }
 }
+

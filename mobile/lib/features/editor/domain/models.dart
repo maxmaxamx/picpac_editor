@@ -56,13 +56,37 @@ class SlotModel {
 class PageModel {
   final int pageNumber;
   final String side; // 'left' | 'right'
+  final String layoutType; // 'grid_4', 'single_full', 'hero_centered', 'split_vertical_2', 'split_horizontal_2', 'split_vertical_3', 'hero_top_split_bottom_3', 'hero_top_trio_4', 'editorial_quote', 'checkerboard_3'
+  final String? headline; // Дизайнерский заголовок (e.g. "GO, BOYS!", "CLASS OF 2026")
+  final String? subhead; // Подзаголовок/цитата (e.g. "(да, это твой выпускной)")
   final List<SlotModel> slots;
 
   const PageModel({
     required this.pageNumber,
     required this.side,
     required this.slots,
+    this.layoutType = 'grid_4',
+    this.headline,
+    this.subhead,
   });
+
+  PageModel copyWith({
+    int? pageNumber,
+    String? side,
+    String? layoutType,
+    String? headline,
+    String? subhead,
+    List<SlotModel>? slots,
+  }) {
+    return PageModel(
+      pageNumber: pageNumber ?? this.pageNumber,
+      side: side ?? this.side,
+      layoutType: layoutType ?? this.layoutType,
+      headline: headline ?? this.headline,
+      subhead: subhead ?? this.subhead,
+      slots: slots ?? this.slots,
+    );
+  }
 
   int get filledSlotsCount =>
       slots.where((s) => s.status == SlotStatus.filled).length;

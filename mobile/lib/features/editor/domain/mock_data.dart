@@ -89,6 +89,7 @@ class MockData {
         return PageModel(
           pageNumber: pageNumber,
           side: side,
+          layoutType: 'grid_4',
           slots: [
             // Состояние Г — Заполненный слот
             const SlotModel(
@@ -125,12 +126,104 @@ class MockData {
         );
       }
 
-      // Для остальных страниц — моковая заполненность (первые 18 страниц заполнены)
+      // Определяем разнообразный макет и число слотов для каждой страницы
+      String layoutType;
+      int slotsCount;
+      String? headline;
+      String? subhead;
+
+      switch (pageNumber) {
+        case 1:
+          layoutType = 'editorial_quote';
+          slotsCount = 2;
+          headline = 'GO, BOYS!';
+          subhead = '(да, это твой выпускной)';
+          break;
+        case 2:
+          layoutType = 'hero_top_trio_4';
+          slotsCount = 4;
+          break;
+        case 3:
+          layoutType = 'split_vertical_2';
+          slotsCount = 2;
+          break;
+        case 5:
+          layoutType = 'checkerboard_3';
+          slotsCount = 3;
+          headline = "LET'S";
+          subhead = 'GO';
+          break;
+        case 6:
+          layoutType = 'hero_centered';
+          slotsCount = 1;
+          break;
+        case 7:
+          layoutType = 'split_vertical_3';
+          slotsCount = 3;
+          break;
+        case 8:
+          layoutType = 'single_full';
+          slotsCount = 1;
+          break;
+        case 9:
+          layoutType = 'hero_top_split_bottom_3';
+          slotsCount = 3;
+          break;
+        case 10:
+          layoutType = 'split_horizontal_2';
+          slotsCount = 2;
+          break;
+        case 11:
+          layoutType = 'split_vertical_2';
+          slotsCount = 2;
+          break;
+        case 12:
+          layoutType = 'hero_top_trio_4';
+          slotsCount = 4;
+          break;
+        case 13:
+          layoutType = 'editorial_quote';
+          slotsCount = 1;
+          headline = 'MEMORIES';
+          subhead = 'лучшие дни вместе';
+          break;
+        case 14:
+          layoutType = 'hero_centered';
+          slotsCount = 1;
+          break;
+        case 15:
+          layoutType = 'checkerboard_3';
+          slotsCount = 3;
+          headline = 'FOREVER';
+          subhead = 'YOUNG';
+          break;
+        case 16:
+          layoutType = 'single_full';
+          slotsCount = 1;
+          break;
+        case 17:
+          layoutType = 'split_vertical_3';
+          slotsCount = 3;
+          break;
+        case 18:
+          layoutType = 'hero_top_split_bottom_3';
+          slotsCount = 3;
+          break;
+        default:
+          layoutType = 'grid_4';
+          slotsCount = 4;
+          break;
+      }
+
+      // Для первых 18 страниц — моковая заполненность
       final isFilledPage = pageNumber <= 18;
       return PageModel(
         pageNumber: pageNumber,
         side: side,
-        slots: List.generate(4, (slotIdx) {
+        layoutType: layoutType,
+        headline: headline,
+        subhead: subhead,
+        slots: List.generate(slotsCount, (slotIdx) {
           if (isFilledPage) {
             final photo = poolPhotos[(pageIndex * 2 + slotIdx) % poolPhotos.length];
             return SlotModel(

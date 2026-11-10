@@ -179,7 +179,7 @@ class Zone3SpreadCanvas extends StatelessWidget {
                       // Сетка слотов в зависимости от выбранного лейаута (1, 2, 3 или 4 слота)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(14.0, 24.0, 14.0, 14.0),
-                        child: _buildDynamicLayout(style.slotBorderRadius),
+                        child: _buildDynamicLayout(style),
                       ),
                     ],
                   ),
@@ -201,11 +201,13 @@ class Zone3SpreadCanvas extends StatelessWidget {
     );
   }
 
-  Widget _buildDynamicLayout(double slotRadius) {
+  Widget _buildDynamicLayout(AlbumTemplateStyle style) {
     final slots = page.slots;
+    final slotRadius = style.slotBorderRadius;
+    final layout = page.layoutType;
 
-    if (slots.length <= 1) {
-      // 1 слот: на всю страницу
+    // 1. Полностраничное фото (1 фото на всю страницу / панорама)
+    if (layout == 'single_full' || (slots.length <= 1 && layout != 'hero_centered')) {
       final slot0 = slots.isNotEmpty ? slots[0] : _fallbackSlot(0);
       return Zone3SlotWidget(
         slot: slot0,
@@ -214,22 +216,40 @@ class Zone3SpreadCanvas extends StatelessWidget {
       );
     }
 
-    if (slots.length == 2) {
-      // 2 слота: верх и низ
-      return Column(
-        children: [
-          Expanded(
+    // 2. Классическое акцентное фото с элегантным паспарту и полями
+    if (layout == 'hero_centered') {
+      final slot0 = slots.isNotEmpty ? slots[0] : _fallbackSlot(0);
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
+          child: AspectRatio(
+            aspectRatio: 1.0,
             child: Zone3SlotWidget(
-              slot: slots[0],
-              onTap: () => onSlotTap(slots[0]),
+              slot: slot0,
+              onTap: () => onSlotTap(slot0),
               borderRadius: slotRadius,
             ),
           ),
-          const SizedBox(height: 8.0),
+        ),
+      );
+    }
+
+    // 3. 2 вертикальных стройных портрета рядом (как на Развороте 2 на скриншоте)
+    if (layout == 'split_vertical_2') {
+      return Row(
+        children: [
           Expanded(
             child: Zone3SlotWidget(
-              slot: slots[1],
-              onTap: () => onSlotTap(slots[1]),
+              slot: slots.isNotEmpty ? slots[0] : _fallbackSlot(0),
+              onTap: () => onSlotTap(slots.isNotEmpty ? slots[0] : _fallbackSlot(0)),
+              borderRadius: slotRadius,
+            ),
+          ),
+          const SizedBox(width: 8.0),
+          Expanded(
+            child: Zone3SlotWidget(
+              slot: slots.length > 1 ? slots[1] : _fallbackSlot(1),
+              onTap: () => onSlotTap(slots.length > 1 ? slots[1] : _fallbackSlot(1)),
               borderRadius: slotRadius,
             ),
           ),
@@ -237,35 +257,252 @@ class Zone3SpreadCanvas extends StatelessWidget {
       );
     }
 
-    if (slots.length == 3) {
-      // 3 слота: 1 сверху широкий, 2 снизу
+    // 4. 2 горизонтальных кадра (друг над другом)
+    if (layout == 'split_horizontal_2' || (slots.length == 2 && layout != 'editorial_quote')) {
+      return Column(
+        children: [
+          Expanded(
+            child: Zone3SlotWidget(
+              slot: slots.isNotEmpty ? slots[0] : _fallbackSlot(0),
+              onTap: () => onSlotTap(slots.isNotEmpty ? slots[0] : _fallbackSlot(0)),
+              borderRadius: slotRadius,
+            ),
+          ),
+          const SizedBox(height: 8.0),
+          Expanded(
+            child: Zone3SlotWidget(
+              slot: slots.length > 1 ? slots[1] : _fallbackSlot(1),
+              onTap: () => onSlotTap(slots.length > 1 ? slots[1] : _fallbackSlot(1)),
+              borderRadius: slotRadius,
+            ),
+          ),
+        ],
+      );
+    }
+
+    // 5. 3 вертикальных портрета рядом в ряд (полосами)
+    if (layout == 'split_vertical_3') {
+      return Row(
+        children: [
+          Expanded(
+            child: Zone3SlotWidget(
+              slot: slots.isNotEmpty ? slots[0] : _fallbackSlot(0),
+              onTap: () => onSlotTap(slots.isNotEmpty ? slots[0] : _fallbackSlot(0)),
+              borderRadius: slotRadius,
+            ),
+          ),
+          const SizedBox(width: 6.0),
+          Expanded(
+            child: Zone3SlotWidget(
+              slot: slots.length > 1 ? slots[1] : _fallbackSlot(1),
+              onTap: () => onSlotTap(slots.length > 1 ? slots[1] : _fallbackSlot(1)),
+              borderRadius: slotRadius,
+            ),
+          ),
+          const SizedBox(width: 6.0),
+          Expanded(
+            child: Zone3SlotWidget(
+              slot: slots.length > 2 ? slots[2] : _fallbackSlot(2),
+              onTap: () => onSlotTap(slots.length > 2 ? slots[2] : _fallbackSlot(2)),
+              borderRadius: slotRadius,
+            ),
+          ),
+        ],
+      );
+    }
+
+    // 6. Журнальный заголовок-типографика + фотоснимок (как "GO, BOYS!" на скриншоте)
+    if (layout == 'editorial_quote') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8.0, top: 2.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  page.headline ?? style.defaultHeadline,
+                  style: TextStyle(
+                    fontSize: 20.0,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: style.headlineLetterSpacing,
+                    color: style.headlineColor,
+                  ),
+                ),
+                const SizedBox(height: 2.0),
+                Text(
+                  page.subhead ?? style.defaultSubhead,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontStyle: FontStyle.italic,
+                    color: style.headlineColor.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: slots.length > 1
+                ? Row(
+                    children: [
+                      Expanded(
+                        child: Zone3SlotWidget(
+                          slot: slots[0],
+                          onTap: () => onSlotTap(slots[0]),
+                          borderRadius: slotRadius,
+                        ),
+                      ),
+                      const SizedBox(width: 8.0),
+                      Expanded(
+                        child: Zone3SlotWidget(
+                          slot: slots[1],
+                          onTap: () => onSlotTap(slots[1]),
+                          borderRadius: slotRadius,
+                        ),
+                      ),
+                    ],
+                  )
+                : Zone3SlotWidget(
+                    slot: slots.isNotEmpty ? slots[0] : _fallbackSlot(0),
+                    onTap: () => onSlotTap(slots.isNotEmpty ? slots[0] : _fallbackSlot(0)),
+                    borderRadius: slotRadius,
+                  ),
+          ),
+        ],
+      );
+    }
+
+    // 7. Шахматный журнальный коллаж с типографикой (как "LET'S GO" на скриншоте)
+    if (layout == 'checkerboard_3') {
+      return Column(
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      page.headline ?? "LET'S",
+                      style: TextStyle(
+                        fontSize: 22.0,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2.0,
+                        color: style.headlineColor.withValues(alpha: 0.75),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6.0),
+                Expanded(
+                  child: Zone3SlotWidget(
+                    slot: slots.isNotEmpty ? slots[0] : _fallbackSlot(0),
+                    onTap: () => onSlotTap(slots.isNotEmpty ? slots[0] : _fallbackSlot(0)),
+                    borderRadius: slotRadius,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6.0),
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Zone3SlotWidget(
+                    slot: slots.length > 1 ? slots[1] : _fallbackSlot(1),
+                    onTap: () => onSlotTap(slots.length > 1 ? slots[1] : _fallbackSlot(1)),
+                    borderRadius: slotRadius,
+                  ),
+                ),
+                const SizedBox(width: 6.0),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      page.subhead ?? "GO",
+                      style: TextStyle(
+                        fontSize: 22.0,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2.0,
+                        color: style.headlineColor.withValues(alpha: 0.75),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (slots.length > 2) ...[
+            const SizedBox(height: 6.0),
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        '(лучшие моменты)',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontStyle: FontStyle.italic,
+                          color: style.headlineColor.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6.0),
+                  Expanded(
+                    child: Zone3SlotWidget(
+                      slot: slots[2],
+                      onTap: () => onSlotTap(slots[2]),
+                      borderRadius: slotRadius,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+
+    // 8. 1 широкое фото сверху + 3 вертикальных портрета внизу (в точности со скриншота 4)
+    if (layout == 'hero_top_trio_4') {
       return Column(
         children: [
           Expanded(
             flex: 5,
             child: Zone3SlotWidget(
-              slot: slots[0],
-              onTap: () => onSlotTap(slots[0]),
+              slot: slots.isNotEmpty ? slots[0] : _fallbackSlot(0),
+              onTap: () => onSlotTap(slots.isNotEmpty ? slots[0] : _fallbackSlot(0)),
               borderRadius: slotRadius,
             ),
           ),
-          const SizedBox(height: 8.0),
+          const SizedBox(height: 6.0),
           Expanded(
             flex: 4,
             child: Row(
               children: [
                 Expanded(
                   child: Zone3SlotWidget(
-                    slot: slots[1],
-                    onTap: () => onSlotTap(slots[1]),
+                    slot: slots.length > 1 ? slots[1] : _fallbackSlot(1),
+                    onTap: () => onSlotTap(slots.length > 1 ? slots[1] : _fallbackSlot(1)),
                     borderRadius: slotRadius,
                   ),
                 ),
-                const SizedBox(width: 8.0),
+                const SizedBox(width: 6.0),
                 Expanded(
                   child: Zone3SlotWidget(
-                    slot: slots[2],
-                    onTap: () => onSlotTap(slots[2]),
+                    slot: slots.length > 2 ? slots[2] : _fallbackSlot(2),
+                    onTap: () => onSlotTap(slots.length > 2 ? slots[2] : _fallbackSlot(2)),
+                    borderRadius: slotRadius,
+                  ),
+                ),
+                const SizedBox(width: 6.0),
+                Expanded(
+                  child: Zone3SlotWidget(
+                    slot: slots.length > 3 ? slots[3] : _fallbackSlot(3),
+                    onTap: () => onSlotTap(slots.length > 3 ? slots[3] : _fallbackSlot(3)),
                     borderRadius: slotRadius,
                   ),
                 ),
@@ -276,7 +513,46 @@ class Zone3SpreadCanvas extends StatelessWidget {
       );
     }
 
-    // 4 слота: сетка 2×2 (по умолчанию)
+    // 9. 1 широкое фото сверху + 2 фото внизу
+    if (layout == 'hero_top_split_bottom_3' || slots.length == 3) {
+      return Column(
+        children: [
+          Expanded(
+            flex: 5,
+            child: Zone3SlotWidget(
+              slot: slots.isNotEmpty ? slots[0] : _fallbackSlot(0),
+              onTap: () => onSlotTap(slots.isNotEmpty ? slots[0] : _fallbackSlot(0)),
+              borderRadius: slotRadius,
+            ),
+          ),
+          const SizedBox(height: 8.0),
+          Expanded(
+            flex: 4,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Zone3SlotWidget(
+                    slot: slots.length > 1 ? slots[1] : _fallbackSlot(1),
+                    onTap: () => onSlotTap(slots.length > 1 ? slots[1] : _fallbackSlot(1)),
+                    borderRadius: slotRadius,
+                  ),
+                ),
+                const SizedBox(width: 8.0),
+                Expanded(
+                  child: Zone3SlotWidget(
+                    slot: slots.length > 2 ? slots[2] : _fallbackSlot(2),
+                    onTap: () => onSlotTap(slots.length > 2 ? slots[2] : _fallbackSlot(2)),
+                    borderRadius: slotRadius,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    // 10. Классическая сетка 2×2 (по умолчанию)
     return Column(
       children: [
         Expanded(
@@ -284,16 +560,16 @@ class Zone3SpreadCanvas extends StatelessWidget {
             children: [
               Expanded(
                 child: Zone3SlotWidget(
-                  slot: slots[0],
-                  onTap: () => onSlotTap(slots[0]),
+                  slot: slots.isNotEmpty ? slots[0] : _fallbackSlot(0),
+                  onTap: () => onSlotTap(slots.isNotEmpty ? slots[0] : _fallbackSlot(0)),
                   borderRadius: slotRadius,
                 ),
               ),
               const SizedBox(width: 8.0),
               Expanded(
                 child: Zone3SlotWidget(
-                  slot: slots[1],
-                  onTap: () => onSlotTap(slots[1]),
+                  slot: slots.length > 1 ? slots[1] : _fallbackSlot(1),
+                  onTap: () => onSlotTap(slots.length > 1 ? slots[1] : _fallbackSlot(1)),
                   borderRadius: slotRadius,
                 ),
               ),
