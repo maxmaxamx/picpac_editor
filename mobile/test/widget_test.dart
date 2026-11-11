@@ -191,8 +191,10 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      const MaterialApp(
-        home: CheckoutScreen(),
+      const ProviderScope(
+        child: MaterialApp(
+          home: CheckoutScreen(),
+        ),
       ),
     );
     await tester.pumpAndSettle();

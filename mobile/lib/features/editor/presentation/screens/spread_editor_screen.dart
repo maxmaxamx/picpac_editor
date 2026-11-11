@@ -1129,14 +1129,33 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
 
   void _openOrderSheet() {
     final state = ref.read(editorControllerProvider);
+    final albumTitle = state.albumTitle.isNotEmpty ? state.albumTitle : widget.albumTitle;
+    final spreadsCount = (state.pages.length / 2).ceil();
+
+    // Сохраняем актуальный альбом в сессии для корзины
+    final currentSession = ref.read(sessionProvider);
+    final updatedAlbum = AlbumData(
+      id: currentSession.currentAlbum?.id ?? 'album_editor',
+      name: albumTitle,
+      format: currentSession.currentAlbum?.format ?? '20x20',
+      lamination: currentSession.currentAlbum?.lamination ?? 'soft_touch',
+      templateId: state.templateId,
+      spreadsCount: spreadsCount,
+      inviteCode: currentSession.currentAlbum?.inviteCode ?? '849204',
+      status: 'ready_to_order',
+    );
+    ref.read(sessionProvider.notifier).setAlbum(updatedAlbum);
+
     Navigator.push<void>(
       context,
       MaterialPageRoute(
         builder: (_) => CheckoutScreen(
-          albumTitle: state.albumTitle.isNotEmpty ? state.albumTitle : widget.albumTitle,
+          albumTitle: albumTitle,
           userName: widget.userName,
-          itemsCost: 2.90,
-          discount: 0.81,
+          itemsCost: 72.90,
+          discount: 0.0,
+          spreadsCount: spreadsCount,
+          format: '20×20 см',
         ),
       ),
     );
