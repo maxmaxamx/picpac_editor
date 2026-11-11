@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../theme/picpac_colors.dart';
 import '../theme/picpac_typography.dart';
 import '../session/session_state.dart';
-import '../../features/checkout/presentation/screens/checkout_screen.dart';
+import '../../features/cart/presentation/screens/cart_screen.dart';
 import '../../features/onboarding/presentation/screens/album_templates_screen.dart';
 
 // 1. Иконка Корзины (Shopping Bag)
@@ -54,7 +53,15 @@ class PicPacBottomNavBar extends ConsumerWidget {
       onCartTap!();
       return;
     }
-    _showCartSheet(context, ref);
+    if (currentIndex == 0) {
+      return;
+    }
+    Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const CartScreen(),
+      ),
+    );
   }
 
   void _handlePlus(BuildContext context, WidgetRef ref) {
@@ -90,9 +97,9 @@ class PicPacBottomNavBar extends ConsumerWidget {
         color: PicPacColors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 12.0,
-            offset: const Offset(0, -3),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10.0,
+            offset: const Offset(0, -2),
           ),
         ],
         border: const Border(
@@ -105,9 +112,9 @@ class PicPacBottomNavBar extends ConsumerWidget {
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 60.0,
+          height: 50.0,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // 1. Корзина
               Expanded(
@@ -134,20 +141,20 @@ class PicPacBottomNavBar extends ConsumerWidget {
                   behavior: HitTestBehavior.opaque,
                   child: Center(
                     child: Container(
-                      width: 44.0,
-                      height: 44.0,
+                      width: 36.0,
+                      height: 36.0,
                       decoration: BoxDecoration(
                         color: PicPacColors.primaryCoral,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: PicPacColors.primaryCoral.withValues(alpha: 0.35),
-                            blurRadius: 8.0,
-                            offset: const Offset(0, 3),
+                            color: PicPacColors.primaryCoral.withValues(alpha: 0.32),
+                            blurRadius: 6.0,
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
-                      padding: const EdgeInsets.all(10.0),
+                      padding: const EdgeInsets.all(8.5),
                       child: SvgPicture.string(
                         kNavPlusSvg,
                         colorFilter: const ColorFilter.mode(
@@ -189,195 +196,37 @@ class PicPacBottomNavBar extends ConsumerWidget {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    final color = isSelected ? PicPacColors.primaryCoral : PicPacColors.textMuted;
+    final color = isSelected ? PicPacColors.primaryCoral : const Color(0xFF8E8E93);
 
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 24.0,
-            height: 24.0,
-            child: SvgPicture.string(
-              svgRaw,
-              colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 20.0,
+              height: 20.0,
+              child: SvgPicture.string(
+                svgRaw,
+                colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+              ),
             ),
-          ),
-          const SizedBox(height: 3.0),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11.0,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: color,
+            const SizedBox(height: 2.0),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: color,
+                height: 1.1,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    );
-  }
-
-  void _showCartSheet(BuildContext context, WidgetRef ref) {
-    final session = ref.read(sessionProvider);
-    final album = session.currentAlbum;
-
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: PicPacColors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
-      ),
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36.0,
-                    height: 4.0,
-                    decoration: BoxDecoration(
-                      color: PicPacColors.borderDefault,
-                      borderRadius: BorderRadius.circular(2.0),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16.0),
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 22.0,
-                      height: 22.0,
-                      child: SvgPicture.string(
-                        kNavCartSvg,
-                        colorFilter: const ColorFilter.mode(
-                          PicPacColors.primaryCoral,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10.0),
-                    Text('Корзина заказов', style: PicPacTypography.h2Section),
-                  ],
-                ),
-                const SizedBox(height: 16.0),
-                if (album != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(14.0),
-                    decoration: BoxDecoration(
-                      color: PicPacColors.surfaceGrey,
-                      borderRadius: BorderRadius.circular(10.0),
-                      border: Border.all(color: PicPacColors.borderDefault),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44.0,
-                          height: 44.0,
-                          decoration: BoxDecoration(
-                            color: PicPacColors.white,
-                            borderRadius: BorderRadius.circular(8.0),
-                            border: Border.all(color: PicPacColors.borderDefault),
-                          ),
-                          child: const Icon(
-                            LucideIcons.bookOpen,
-                            color: PicPacColors.primaryCoral,
-                            size: 22.0,
-                          ),
-                        ),
-                        const SizedBox(width: 12.0),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                album.name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14.5,
-                                  color: PicPacColors.textDark,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2.0),
-                              Text(
-                                '${album.spreadsCount} разворотов • ${album.format}',
-                                style: PicPacTypography.photoCaption,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Text(
-                          '72,90 BYN',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 14.0,
-                            color: PicPacColors.primaryCoral,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: PicPacColors.primaryCoral,
-                      foregroundColor: PicPacColors.white,
-                      minimumSize: const Size.fromHeight(48.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.pop(sheetContext);
-                      Navigator.push<void>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => CheckoutScreen(
-                            albumTitle: album.name,
-                            userName: session.user?.displayName ?? 'Участник',
-                          ),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      'Перейти к оформлению',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15.0),
-                    ),
-                  ),
-                ] else ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24.0),
-                    child: Column(
-                      children: [
-                        const Icon(LucideIcons.shoppingBag, size: 40.0, color: PicPacColors.textMuted),
-                        const SizedBox(height: 10.0),
-                        Text(
-                          'Корзина пока пуста',
-                          style: PicPacTypography.h2Section.copyWith(fontSize: 16.0),
-                        ),
-                        const SizedBox(height: 4.0),
-                        Text(
-                          'Создайте альбом или подключитесь по коду, чтобы заполнить фотокнигу',
-                          textAlign: TextAlign.center,
-                          style: PicPacTypography.photoCaption,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 

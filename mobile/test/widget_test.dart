@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile/main.dart';
 import 'package:mobile/features/editor/presentation/screens/spread_editor_screen.dart';
+import 'package:mobile/features/cart/presentation/screens/cart_screen.dart';
 import 'package:mobile/features/checkout/presentation/screens/checkout_screen.dart';
 
 class _TestHttpOverrides extends HttpOverrides {
@@ -241,5 +242,35 @@ void main() {
 
     // Verify selection returned to checkout
     expect(find.text('Европочта Отделение №124'), findsOneWidget);
+  });
+
+  testWidgets('CartScreen displays added album with cover preview and navigates to checkout', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(393 * 3, 852 * 3);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: CartScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify cart header and album details
+    expect(find.text('Корзина (1)'), findsOneWidget);
+    expect(find.text('Выпускной 11-Б • 2026'), findsWidgets);
+    expect(find.text('72,90 руб.'), findsWidgets);
+    expect(find.text('Оформить заказ • 1'), findsOneWidget);
+
+    // Tap checkout button
+    await tester.tap(find.text('Оформить заказ • 1'));
+    await tester.pumpAndSettle();
+
+    // Verify it navigated to delivery and customer details screen
+    expect(find.text('Оформление'), findsOneWidget);
+    expect(find.text('Данные покупателя'), findsOneWidget);
   });
 }

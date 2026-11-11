@@ -10,7 +10,7 @@ import '../../../../core/session/session_state.dart';
 import '../../../../core/theme/picpac_colors.dart';
 import '../../../../core/theme/picpac_typography.dart';
 import '../../../../core/widgets/picpac_image.dart';
-import '../../../checkout/presentation/screens/checkout_screen.dart';
+import '../../../cart/presentation/screens/cart_screen.dart';
 import '../../domain/mock_data.dart';
 import '../../domain/models.dart';
 import '../controllers/editor_controller.dart';
@@ -1146,17 +1146,26 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
     );
     ref.read(sessionProvider.notifier).setAlbum(updatedAlbum);
 
+    // Добавляем или обновляем CartItem в сессии с превью обложки
+    ref.read(sessionProvider.notifier).addOrUpdateCartItem(
+      CartItem(
+        id: updatedAlbum.id,
+        title: albumTitle,
+        format: '20×20 см',
+        spreadsCount: spreadsCount,
+        templateId: state.templateId,
+        coverImageUrl: state.winningCoverPhoto?.imageUrl,
+        price: 72.90,
+        oldPrice: 95.00,
+        quantity: 1,
+        isSelected: true,
+      ),
+    );
+
     Navigator.push<void>(
       context,
       MaterialPageRoute(
-        builder: (_) => CheckoutScreen(
-          albumTitle: albumTitle,
-          userName: widget.userName,
-          itemsCost: 72.90,
-          discount: 0.0,
-          spreadsCount: spreadsCount,
-          format: '20×20 см',
-        ),
+        builder: (_) => const CartScreen(),
       ),
     );
   }

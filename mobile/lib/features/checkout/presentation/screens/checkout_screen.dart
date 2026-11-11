@@ -290,7 +290,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       ),
       bottomNavigationBar: PicPacBottomNavBar(
         currentIndex: 0,
-        onCartTap: () {},
+        onCartTap: () => Navigator.pop(context),
       ),
     );
   }
