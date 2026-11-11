@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/session/session_state.dart';
 import '../../../../core/theme/picpac_colors.dart';
@@ -1196,41 +1198,55 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
                 ),
               ),
               const SizedBox(height: 6.0),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                decoration: BoxDecoration(
-                  color: PicPacColors.surfaceGrey,
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
                   borderRadius: BorderRadius.circular(10.0),
-                  border: Border.all(color: PicPacColors.borderDefault),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(LucideIcons.link, size: 16.0, color: PicPacColors.textMuted),
-                    const SizedBox(width: 8.0),
-                    Expanded(
-                      child: Text(
-                        shareUrl,
-                        style: PicPacTypography.photoCaption.copyWith(
-                          fontSize: 13.0,
-                          color: PicPacColors.primaryCoral,
-                          fontWeight: FontWeight.w600,
+                  onTap: () async {
+                    Clipboard.setData(ClipboardData(text: shareUrl));
+                    _showToast(context, 'Ссылка скопирована!');
+                    final uri = Uri.parse(shareUrl);
+                    try {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    } catch (_) {}
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                    decoration: BoxDecoration(
+                      color: PicPacColors.surfaceGrey,
+                      borderRadius: BorderRadius.circular(10.0),
+                      border: Border.all(color: PicPacColors.borderDefault),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(LucideIcons.link, size: 16.0, color: PicPacColors.textMuted),
+                        const SizedBox(width: 8.0),
+                        Expanded(
+                          child: Text(
+                            shareUrl,
+                            style: PicPacTypography.photoCaption.copyWith(
+                              fontSize: 13.0,
+                              color: PicPacColors.primaryCoral,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                        IconButton(
+                          icon: const Icon(LucideIcons.copy, size: 18.0, color: PicPacColors.textDark),
+                          tooltip: 'Скопировать ссылку',
+                          constraints: const BoxConstraints(),
+                          padding: EdgeInsets.zero,
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: shareUrl));
+                            _showToast(context, 'Ссылка скопирована в буфер обмена!');
+                          },
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      icon: const Icon(LucideIcons.copy, size: 18.0, color: PicPacColors.textDark),
-                      tooltip: 'Скопировать ссылку',
-                      constraints: const BoxConstraints(),
-                      padding: EdgeInsets.zero,
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: shareUrl));
-                        _showToast(context, 'Ссылка скопирована в буфер обмена!');
-                      },
-                    ),
-                  ],
+                  ),
                 ),
               ),
               const SizedBox(height: 14.0),
@@ -1279,32 +1295,70 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
               ),
             ],
           ),
+          actionsPadding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 18.0),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(
-                'Закрыть',
-                style: PicPacTypography.buttonTextDark.copyWith(
-                  color: PicPacColors.textMuted,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 1. Кнопка "Поделиться ссылкой" (растянута по центру, сверху)
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: PicPacColors.primaryCoral,
+                    foregroundColor: PicPacColors.white,
+                    elevation: 0,
+                    minimumSize: const Size.fromHeight(48.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  icon: const Icon(LucideIcons.share2, size: 18.0),
+                  label: const Text(
+                    'Поделиться ссылкой',
+                    style: TextStyle(
+                      fontSize: 15.0,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  onPressed: () async {
+                    Clipboard.setData(ClipboardData(text: shareUrl));
+
+                    final box = context.findRenderObject() as RenderBox?;
+                    final origin = box != null
+                        ? box.localToGlobal(Offset.zero) & box.size
+                        : const Rect.fromLTWH(0, 0, 100, 100);
+
+                    await SharePlus.instance.share(
+                      ShareParams(
+                        text: 'Присоединяйся к созданию фотоальбома в PicPac!\n\nСсылка для входа: $shareUrl\nКод альбома: $rawCode',
+                        subject: 'Приглашение в фотоальбом PicPac',
+                        sharePositionOrigin: origin,
+                      ),
+                    );
+                  },
                 ),
-              ),
-            ),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: PicPacColors.primaryCoral,
-                foregroundColor: PicPacColors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
+
+                const SizedBox(height: 10.0),
+
+                // 2. Кнопка "Выход" (под кнопкой поделиться, растянута по центру)
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: PicPacColors.textDark,
+                    minimumSize: const Size.fromHeight(44.0),
+                    side: const BorderSide(color: PicPacColors.borderDefault, width: 1.2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text(
+                    'Выход',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
-              ),
-              icon: const Icon(LucideIcons.share, size: 16.0),
-              label: const Text('Поделиться ссылкой'),
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: shareUrl));
-                Navigator.pop(dialogContext);
-                _showToast(context, 'Ссылка скопирована: $shareUrl');
-              },
+              ],
             ),
           ],
         );

@@ -8,6 +8,7 @@ import '../../../../core/theme/picpac_colors.dart';
 import '../../../../core/theme/picpac_typography.dart';
 import '../../../editor/presentation/screens/spread_editor_screen.dart';
 import '../widgets/pin_code_input.dart';
+import '../../../../core/widgets/picpac_bottom_nav_bar.dart';
 import 'album_templates_screen.dart';
 
 enum OnboardingMode {
@@ -265,6 +266,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             );
           },
         ),
+      ),
+      bottomNavigationBar: PicPacBottomNavBar(
+        currentIndex: 1,
+        onPlusTap: () {
+          setState(() {
+            _mode = OnboardingMode.create;
+          });
+        },
       ),
     );
   }
