@@ -2,6 +2,7 @@ process.env.NODE_ENV = 'test';
 
 import { initDatabase } from './config/database.js';
 import { setupModels, sequelize } from './models/index.js';
+import { slotManager } from './socket/slot.manager.js';
 import { app } from './index.js';
 import http from 'http';
 
@@ -187,8 +188,34 @@ async function runTests() {
     }
     console.log(`   ✅ Слот ${firstSlot.id} успешно очищен`);
 
+    // 10. Тест реакций: один пользователь — максимум одна реакция на слот
+    console.log('10. Тест реакций на слот (правило 1 реакции на пользователя)...');
+    // Хост ставит ❤️
+    const r1 = await slotManager.toggleReaction(firstSlot.id, '❤️', hostData.user.id);
+    if (r1.reactions['❤️'] !== 1) throw new Error(`Ожидалась 1 реакция ❤️, получено: ${JSON.stringify(r1)}`);
+
+    // Хост меняет ❤️ на 🔥 -> ❤️ должно исчезнуть, 🔥 стать 1
+    const r2 = await slotManager.toggleReaction(firstSlot.id, '🔥', hostData.user.id);
+    if (r2.reactions['🔥'] !== 1 || r2.reactions['❤️']) {
+      throw new Error(`Ожидалась замена реакции на 🔥, получено: ${JSON.stringify(r2)}`);
+    }
+
+    // Хост нажимает 🔥 еще раз -> реакция снимается (0 реакций)
+    const r3 = await slotManager.toggleReaction(firstSlot.id, '🔥', hostData.user.id);
+    if (r3.reactions['🔥']) {
+      throw new Error(`Ожидалось снятие реакции 🔥, получено: ${JSON.stringify(r3)}`);
+    }
+
+    // Два разных пользователя ставят реакции -> у каждого по одной
+    await slotManager.toggleReaction(firstSlot.id, '❤️', hostData.user.id);
+    const r4 = await slotManager.toggleReaction(firstSlot.id, '🔥', editorData.user.id);
+    if (r4.reactions['❤️'] !== 1 || r4.reactions['🔥'] !== 1) {
+      throw new Error(`Ожидались реакции от 2 пользователей, получено: ${JSON.stringify(r4)}`);
+    }
+    console.log('   ✅ Правило одной реакции на пользователя строго соблюдено!');
+
     // 11. Тест оформления заказа (POST /api/albums/:id/checkout)
-    console.log('10. Тест оформления заказа альбома...');
+    console.log('11. Тест оформления заказа альбома...');
     const orderRes = await fetch(`${baseUrl}/api/albums/${album.id}/checkout`, {
       method: 'POST',
       headers: {

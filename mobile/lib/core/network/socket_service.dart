@@ -118,6 +118,12 @@ class SocketService {
       }
     });
 
+    socket.on('slot:reaction_updated', (data) {
+      if (data is Map) {
+        _reactionsUpdatedController.add(Map<String, dynamic>.from(data));
+      }
+    });
+
     socket.on('cover:vote_updated', (data) {
       if (data is Map) {
         _coverVotedController.add(Map<String, dynamic>.from(data));

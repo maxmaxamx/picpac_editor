@@ -38,39 +38,7 @@ class Zone3SpreadCanvas extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = AlbumTemplateStyle.fromId(templateId);
 
-    // 1. Первая страница в редакторе — Презентация твердой обложки (Cover)
-    if (page.pageNumber == 0) {
-      return Container(
-        width: double.infinity,
-        height: double.infinity,
-        color: style.canvasBackgroundColor,
-        child: Column(
-          children: [
-            Expanded(
-              child: Zone3CoverWidget(
-                albumTitle: albumTitle,
-                templateId: templateId,
-                winningPhoto: winningPhoto,
-                votesCount: votesCount,
-                totalVotes: totalVotes,
-                onVoteTap: onVoteTap ?? () {},
-                onOpenPagesTap: () => onPageChange(1),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: Zone3FloatingPill(
-                currentPage: 0,
-                totalPages: totalPages,
-                onPageChange: onPageChange,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // 2. Внутренние страницы книги (Развороты со слотами), оформленные по стилю выбранного шаблона
+    // Холст книги (Обложка и страницы) в едином полиграфическом формате и пропорциях
     return LayoutBuilder(
       builder: (context, constraints) {
         // Доступное пространство
@@ -84,7 +52,7 @@ class Zone3SpreadCanvas extends StatelessWidget {
             verticalPadding * 2;
         final double maxAvailableWidth = constraints.maxWidth - 32.0; // отступы по бокам 16px
 
-        // Пропорции листа (1:1 для 20×20 или 3:4 для 21×30)
+        // Пропорции листа (1:1 для 20×20 или 3:4 для 21×30) — обложка и страницы идентичны
         double sheetWidth = maxAvailableWidth;
         double sheetHeight = sheetWidth / aspectRatio;
 
@@ -93,6 +61,8 @@ class Zone3SpreadCanvas extends StatelessWidget {
           sheetWidth = sheetHeight * aspectRatio;
         }
 
+        final bool isCover = page.pageNumber == 0;
+
         return Container(
           width: double.infinity,
           height: constraints.maxHeight,
@@ -100,8 +70,21 @@ class Zone3SpreadCanvas extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Лист фотокниги в стилистике шаблона с поддержкой горизонтального свайпа
-              GestureDetector(
+              if (isCover)
+                Zone3CoverWidget(
+                  albumTitle: albumTitle,
+                  templateId: templateId,
+                  winningPhoto: winningPhoto,
+                  votesCount: votesCount,
+                  totalVotes: totalVotes,
+                  sheetWidth: sheetWidth,
+                  sheetHeight: sheetHeight,
+                  onVoteTap: onVoteTap ?? () {},
+                  onOpenPagesTap: () => onPageChange(1),
+                )
+              else
+                // Лист фотокниги в стилистике шаблона с поддержкой горизонтального свайпа
+                GestureDetector(
                 onHorizontalDragEnd: (details) {
                   if (details.primaryVelocity != null) {
                     if (details.primaryVelocity! < -200 &&

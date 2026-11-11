@@ -138,6 +138,7 @@ class EditorController extends Notifier<EditorState> {
   SocketService get _socketService => ref.read(socketServiceProvider);
 
   UserProfile? _currentUser;
+  final Map<String, String> _userSlotReactions = {};
 
   @override
   EditorState build() {
@@ -442,6 +443,33 @@ class EditorController extends Notifier<EditorState> {
         winningCoverId: winningId ?? state.winningCoverId,
       );
     });
+
+    // Слушаем обновление реакций на слоты
+    _reactionsUpdatedSub = _socketService.reactionsUpdatedStream.listen((data) {
+      final slotId = data['slotId'] as String?;
+      final rawReactions = data['reactions'];
+      if (slotId == null || rawReactions is! Map) return;
+
+      final Map<String, int> reactionsMap = {};
+      rawReactions.forEach((k, v) {
+        if (v is num && v > 0) {
+          reactionsMap[k.toString()] = v.toInt();
+        }
+      });
+
+      final updatedPages = state.pages.map((p) {
+        return p.copyWith(
+          slots: p.slots.map((s) {
+            if (s.id == slotId) {
+              return s.copyWith(reactions: reactionsMap);
+            }
+            return s;
+          }).toList(),
+        );
+      }).toList();
+
+      state = state.copyWith(pages: updatedPages);
+    });
   }
 
   void _applySlotUpdate(Map<String, dynamic> slotData) {
@@ -584,13 +612,33 @@ class EditorController extends Notifier<EditorState> {
 
   void toggleReaction(String slotId, String emoji) {
     _socketService.toggleReaction(slotId: slotId, emoji: emoji);
-    // Локальный инкремент
+
+    final previousEmoji = _userSlotReactions[slotId];
+    if (previousEmoji == emoji) {
+      // Повторный клик по тому же эмодзи снимает реакцию
+      _userSlotReactions.remove(slotId);
+    } else {
+      // Пользователь может оставить только 1 реакцию: заменяем предыдущую
+      _userSlotReactions[slotId] = emoji;
+    }
+
+    // Локальное оптимистичное обновление
     final updatedPages = state.pages.map((p) {
       return p.copyWith(
         slots: p.slots.map((s) {
           if (s.id == slotId) {
             final reactions = Map<String, int>.from(s.reactions);
-            reactions[emoji] = (reactions[emoji] ?? 0) + 1;
+            if (previousEmoji != null) {
+              final count = reactions[previousEmoji] ?? 0;
+              if (count <= 1) {
+                reactions.remove(previousEmoji);
+              } else {
+                reactions[previousEmoji] = count - 1;
+              }
+            }
+            if (previousEmoji != emoji) {
+              reactions[emoji] = (reactions[emoji] ?? 0) + 1;
+            }
             return s.copyWith(reactions: reactions);
           }
           return s;
@@ -602,6 +650,7 @@ class EditorController extends Notifier<EditorState> {
 
 
   void clearSlot(String slotId) {
+    _userSlotReactions.remove(slotId);
     // 1. WebSocket sync
     _socketService.clearMedia(slotId);
 
@@ -851,6 +900,7 @@ class EditorController extends Notifier<EditorState> {
   }
 
   void _updateSlotOptimisticAssigned(String slotId, MediaPoolItem photo) {
+    _userSlotReactions.remove(slotId);
     final author = (_currentUser?.displayName != null &&
             _currentUser!.displayName.trim().isNotEmpty &&
             _currentUser!.displayName != 'Участник')
@@ -868,7 +918,7 @@ class EditorController extends Notifier<EditorState> {
               imageUrl: photo.imageUrl,
               authorName: author,
               caption: null,
-              reactions: {'❤️': 1},
+              reactions: const {}, // 0 реакций при добавлении фото
             );
           }
           return s;

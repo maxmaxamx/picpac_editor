@@ -165,12 +165,20 @@ export class SlotManager {
    * Добавление / удаление быстрой реакции
    */
   public async toggleReaction(slotId: string, emoji: string, userId: string) {
+    // Один пользователь может оставить только одну реакцию на слот
     const existing = await SlotReaction.findOne({
-      where: { slotId, userId, emoji },
+      where: { slotId, userId },
     });
 
     if (existing) {
-      await existing.destroy();
+      if (existing.emoji === emoji) {
+        // Повторный клик по тому же эмодзи снимает реакцию
+        await existing.destroy();
+      } else {
+        // Выбор другого эмодзи заменяет предыдущую реакцию
+        existing.emoji = emoji;
+        await existing.save();
+      }
     } else {
       await SlotReaction.create({
         slotId,

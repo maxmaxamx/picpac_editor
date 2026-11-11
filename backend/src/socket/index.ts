@@ -201,6 +201,10 @@ export function setupSocketHandlers(io: Server) {
 
           const result = await slotManager.toggleReaction(slotId, emoji, u.userId);
 
+          io.to(albumId).emit('slot:reactions_updated', {
+            albumId,
+            ...result,
+          });
           io.to(albumId).emit('slot:reaction_updated', {
             albumId,
             ...result,
