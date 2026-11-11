@@ -57,7 +57,7 @@ const List<AlbumTemplate> kAlbumTemplates = [
   ),
   AlbumTemplate(
     id: 'school_drive',
-    title: 'Школьный Драйв & Casual',
+    title: 'Школьный Драйв',
     primaryColor: Color(0xFFFF4D4D),
     palette: [Color(0xFFFF4D4D), Color(0xFF3B82F6), Color(0xFFFBBF24), Color(0xFF10B981)],
     icon: LucideIcons.sparkles,

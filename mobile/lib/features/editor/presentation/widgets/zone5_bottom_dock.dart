@@ -148,7 +148,7 @@ class Zone5BottomDock extends StatelessWidget {
                             ),
                             const SizedBox(width: 6.0),
                             Text(
-                              'В заказ • $filledPagesCount/$totalPagesCount стр.',
+                              'В корзину • $filledPagesCount/$totalPagesCount стр.',
                               style: PicPacTypography.buttonText,
                             ),
                           ],

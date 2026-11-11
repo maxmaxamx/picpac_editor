@@ -205,7 +205,7 @@ class AlbumTemplateStyle {
       default:
         return const AlbumTemplateStyle(
           id: 'school_drive',
-          title: 'Школьный Драйв & Casual',
+          title: 'Школьный Драйв',
           primaryColor: Color(0xFFFF4D4D),
           accentColor: Color(0xFF3B82F6),
           canvasBackgroundColor: Color(0xFFF5F5F5),
