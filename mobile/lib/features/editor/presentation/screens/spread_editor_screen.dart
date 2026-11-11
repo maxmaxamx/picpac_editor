@@ -1145,7 +1145,7 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
     final displayCode = rawCode.length == 6
         ? '${rawCode.substring(0, 3)} - ${rawCode.substring(3)}'
         : rawCode;
-    final shareUrl = 'https://picpac.by/join?code=$rawCode';
+    final shareUrl = 'picpac://join?code=$rawCode';
 
     showDialog<void>(
       context: context,
@@ -1189,7 +1189,7 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
               const SizedBox(height: 16.0),
               // Ссылка на приложение с кодом
               Text(
-                'Ссылка на альбом:',
+                'Ссылка на приложение (Live-режим):',
                 style: PicPacTypography.buttonTextDark.copyWith(
                   fontSize: 12.0,
                   color: PicPacColors.textMuted,

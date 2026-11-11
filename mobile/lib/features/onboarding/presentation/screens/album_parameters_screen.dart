@@ -607,7 +607,7 @@ class _AlbumParametersScreenState extends ConsumerState<AlbumParametersScreen> {
           Row(
             children: [5, 10, 15, 20].map((count) {
               final isChipSelected = _spreadsCount == count;
-              final label = count == 10 ? '10 (хит)' : '$count';
+              final label = count == 10 ? '10' : '$count';
 
               return Expanded(
                 child: Padding(

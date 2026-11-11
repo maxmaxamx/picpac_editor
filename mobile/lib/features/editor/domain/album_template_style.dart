@@ -92,7 +92,7 @@ class AlbumTemplateStyle {
       case 'minimalism':
         return const AlbumTemplateStyle(
           id: 'minimalism',
-          title: 'Минимализм & Ч/Б Эстетика',
+          title: 'Минимализм',
           primaryColor: Color(0xFF09090B),
           accentColor: Color(0xFF18181B),
           canvasBackgroundColor: Color(0xFFE4E4E7),
@@ -120,7 +120,7 @@ class AlbumTemplateStyle {
       case 'gentle_pastel':
         return const AlbumTemplateStyle(
           id: 'gentle_pastel',
-          title: 'Нежная Акварель & Пастель',
+          title: 'Пастель',
           primaryColor: Color(0xFFEC4899),
           accentColor: Color(0xFFF472B6),
           canvasBackgroundColor: Color(0xFFFDF2F8),
@@ -148,7 +148,7 @@ class AlbumTemplateStyle {
       case 'vintage_film':
         return const AlbumTemplateStyle(
           id: 'vintage_film',
-          title: 'Винтаж & Плёнка 90-х',
+          title: 'Винтаж',
           primaryColor: Color(0xFFB45309),
           accentColor: Color(0xFFF59E0B),
           canvasBackgroundColor: Color(0xFFF5EBE1),
@@ -176,7 +176,7 @@ class AlbumTemplateStyle {
       case 'primary_school':
         return const AlbumTemplateStyle(
           id: 'primary_school',
-          title: 'Младшая школа & Первоклашки',
+          title: 'Младшая школа',
           primaryColor: Color(0xFF6366F1),
           accentColor: Color(0xFFF59E0B),
           canvasBackgroundColor: Color(0xFFEEF2FF),

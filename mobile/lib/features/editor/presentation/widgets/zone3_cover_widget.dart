@@ -99,79 +99,10 @@ class Zone3CoverWidget extends StatelessWidget {
 
             // Содержимое обложки
             Padding(
-              padding: const EdgeInsets.fromLTRB(18.0, 14.0, 16.0, 14.0),
+              padding: const EdgeInsets.fromLTRB(18.0, 16.0, 16.0, 14.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Верхний бейдж стиля + Индикатор голосов
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Flexible(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.5),
-                          decoration: BoxDecoration(
-                            color: style.coverAccentColor.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(12.0),
-                            border: Border.all(
-                              color: style.coverAccentColor.withValues(alpha: 0.4),
-                              width: 1.0,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                style.icon,
-                                size: 12.0,
-                                color: style.coverAccentColor,
-                              ),
-                              const SizedBox(width: 4.0),
-                              Flexible(
-                                child: Text(
-                                  style.coverBadgeText,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 10.0,
-                                    fontWeight: FontWeight.w700,
-                                    color: style.coverAccentColor,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8.0),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.5),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.4),
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text('👑', style: TextStyle(fontSize: 10.5)),
-                            const SizedBox(width: 4.0),
-                            Text(
-                              votesCount > 0 ? '$votesCount голосов' : 'Обложка',
-                              style: TextStyle(
-                                color: style.coverTextColor,
-                                fontSize: 10.0,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 10.0),
-
                   // Заголовок альбома
                   Text(
                     albumTitle.toUpperCase(),
@@ -186,7 +117,7 @@ class Zone3CoverWidget extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 10.0),
+                  const SizedBox(height: 12.0),
 
                   // Главная фотография-победитель обложки
                   Expanded(
