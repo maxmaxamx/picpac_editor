@@ -1,6 +1,6 @@
 import { Transaction } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
-import { sequelize, Album, AlbumMember, Page, Slot, MediaPool, User } from '../models/index.js';
+import { sequelize, Album, AlbumMember, Page, Slot, MediaPool, SlotReaction, CoverVote, User } from '../models/index.js';
 
 export function generateInviteCode(): string {
   // 6-значный цифровой код для удобного ввода с мобильной клавиатуры
@@ -284,6 +284,170 @@ export async function createAlbumTransaction(dto: CreateAlbumDTO) {
     }
 
     return album;
+  });
+}
+
+export async function joinAlbumService(inviteCode: string, userId: string) {
+  const cleanCode = inviteCode.replace(/\D/g, '').trim();
+  const album = await Album.findOne({
+    where: { inviteCode: cleanCode },
+  });
+
+  if (!album) {
+    throw new Error('ALBUM_NOT_FOUND');
+  }
+
+  let member = await AlbumMember.findOne({
+    where: { albumId: album.id, userId },
+  });
+
+  if (!member) {
+    member = await AlbumMember.create({
+      albumId: album.id,
+      userId,
+      role: album.hostUserId === userId ? 'host' : 'editor',
+    });
+  }
+
+  const albumJson = album.toJSON();
+  (albumJson as any).name = album.title;
+  (albumJson as any).spreadsCount = album.totalSpreads;
+
+  return {
+    album: albumJson,
+    role: member.role,
+  };
+}
+
+export async function getAlbumFullService(albumId: string) {
+  const album = await Album.findByPk(albumId, {
+    include: [
+      {
+        model: Page,
+        as: 'pages',
+        include: [
+          {
+            model: Slot,
+            as: 'slots',
+            include: [
+              {
+                model: SlotReaction,
+                as: 'reactions',
+              },
+              {
+                model: MediaPool,
+                as: 'media',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        model: MediaPool,
+        as: 'mediaPool',
+      },
+      {
+        model: AlbumMember,
+        as: 'members',
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'displayName', 'avatarColor', 'avatarUrl'],
+          },
+        ],
+      },
+      {
+        model: CoverVote,
+        as: 'coverVotes',
+      },
+    ],
+    order: [
+      [{ model: Page, as: 'pages' }, 'pageNumber', 'ASC'],
+      [{ model: Page, as: 'pages' }, { model: Slot, as: 'slots' }, 'slotIndex', 'ASC'],
+    ],
+  });
+
+  if (!album) {
+    throw new Error('ALBUM_NOT_FOUND');
+  }
+
+  const albumJson = album.toJSON();
+  (albumJson as any).name = album.title;
+  (albumJson as any).spreadsCount = album.totalSpreads;
+
+  return albumJson;
+}
+
+export async function assignSlotMediaService(
+  slotId: string,
+  mediaId: string,
+  caption?: string,
+  authorName?: string,
+) {
+  const slot = await Slot.findByPk(slotId);
+  if (!slot) {
+    throw new Error('SLOT_NOT_FOUND');
+  }
+
+  slot.mediaId = mediaId;
+  if (caption !== undefined) slot.caption = caption;
+  if (authorName) slot.authorName = authorName;
+  slot.lockedByUserId = null;
+  slot.lockedByName = null;
+  slot.lockedUntil = null;
+  await slot.save();
+
+  const updated = await Slot.findByPk(slotId, {
+    include: [
+      { model: MediaPool, as: 'media' },
+      { model: SlotReaction, as: 'reactions' },
+    ],
+  });
+
+  return updated;
+}
+
+export async function clearSlotMediaService(slotId: string) {
+  const slot = await Slot.findByPk(slotId);
+  if (!slot) {
+    throw new Error('SLOT_NOT_FOUND');
+  }
+
+  slot.mediaId = null;
+  slot.caption = null;
+  slot.authorName = null;
+  slot.lockedByUserId = null;
+  slot.lockedByName = null;
+  slot.lockedUntil = null;
+  await slot.save();
+
+  return slot;
+}
+
+export async function updatePageLayoutService(
+  albumId: string,
+  pageNumber: number,
+  layoutType: string,
+) {
+  const page = await Page.findOne({
+    where: { albumId, pageNumber },
+  });
+
+  if (!page) {
+    throw new Error('PAGE_NOT_FOUND');
+  }
+
+  page.layoutType = layoutType;
+  await page.save();
+
+  return page;
+}
+
+export async function getAlbumMediaService(albumId: string) {
+  return MediaPool.findAll({
+    where: { albumId },
+    order: [['createdAt', 'DESC']],
   });
 }
 

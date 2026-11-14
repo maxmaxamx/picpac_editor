@@ -70,11 +70,83 @@ class AlbumData {
   }
 }
 
-class ApiClient {
+/// Интерфейс аутентификации (SOLID: ISP)
+abstract class IAuthApi {
+  void setToken(String? token);
+  Future<UserProfile> guestAuth(String displayName);
+}
+
+/// Интерфейс работы с альбомами (SOLID: ISP)
+abstract class IAlbumApi {
+  Future<AlbumData> createAlbum({
+    required String name,
+    required String format,
+    required String lamination,
+    required int spreadsCount,
+    String? templateId,
+  });
+
+  Future<AlbumData> joinAlbum(String inviteCode);
+  Future<Map<String, dynamic>> getAlbumFull(String albumId);
+}
+
+/// Интерфейс загрузки медиа (SOLID: ISP)
+abstract class IMediaApi {
+  String get baseUrl;
+  String resolveUrl(String? path);
+  Future<Map<String, dynamic>> uploadMedia({
+    required String albumId,
+    required List<int> fileBytes,
+    required String fileName,
+  });
+}
+
+/// Интерфейс управления слотами и разворотами (SOLID: ISP)
+abstract class ISlotApi {
+  Future<Map<String, dynamic>> assignSlotMedia({
+    required String albumId,
+    required String slotId,
+    required String mediaId,
+    String? caption,
+  });
+
+  Future<void> clearSlotMedia({
+    required String albumId,
+    required String slotId,
+  });
+
+  Future<void> updatePageLayout({
+    required String albumId,
+    required int pageNumber,
+    required String layoutType,
+  });
+}
+
+/// Интерфейс оформления заказов (SOLID: ISP)
+abstract class IOrderApi {
+  Future<Map<String, dynamic>> createOrder({
+    required String albumId,
+    required String pickupPointId,
+    required String pickupPointName,
+    required String phone,
+    required String customerName,
+    required String email,
+    String? comment,
+  });
+}
+
+/// Единый абстрактный контракт API-клиента (SOLID: DIP, LSP)
+abstract class IApiClient implements IAuthApi, IAlbumApi, IMediaApi, ISlotApi, IOrderApi {
+  void updateBaseUrl(String newUrl);
+  Future<bool> checkHealth();
+}
+
+class ApiClient implements IApiClient {
   final Dio _dio;
   String? _token;
   String _baseUrl;
 
+  @override
   String get baseUrl => _baseUrl;
 
   ApiClient({String? baseUrl})
@@ -99,16 +171,19 @@ class ApiClient {
     );
   }
 
+  @override
   void setToken(String? token) {
     _token = token;
   }
 
+  @override
   void updateBaseUrl(String newUrl) {
     final clean = newUrl.trim().replaceAll(RegExp(r'/+$'), '');
     _baseUrl = clean;
     _dio.options.baseUrl = clean;
   }
 
+  @override
   Future<bool> checkHealth() async {
     try {
       final res = await _dio.get('/health');
@@ -118,6 +193,7 @@ class ApiClient {
     }
   }
 
+  @override
   String resolveUrl(String? path) {
     if (path == null || path.isEmpty) return '';
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
@@ -125,6 +201,7 @@ class ApiClient {
     return '$baseUrl/$path';
   }
 
+  @override
   Future<UserProfile> guestAuth(String displayName) async {
     final response = await _dio.post(
       '/api/auth/guest',
@@ -139,6 +216,7 @@ class ApiClient {
     return UserProfile.fromJson(userJson, token: token);
   }
 
+  @override
   Future<AlbumData> createAlbum({
     required String name,
     required String format,
@@ -164,6 +242,7 @@ class ApiClient {
     return AlbumData.fromJson(albumJson);
   }
 
+  @override
   Future<AlbumData> joinAlbum(String inviteCode) async {
     final response = await _dio.post(
       '/api/albums/join',
@@ -175,12 +254,14 @@ class ApiClient {
     return AlbumData.fromJson(albumJson);
   }
 
+  @override
   Future<Map<String, dynamic>> getAlbumFull(String albumId) async {
     final response = await _dio.get('/api/albums/$albumId/full');
     final data = response.data as Map<String, dynamic>;
     return data['album'] as Map<String, dynamic>;
   }
 
+  @override
   Future<Map<String, dynamic>> uploadMedia({
     required String albumId,
     required List<int> fileBytes,
@@ -199,6 +280,7 @@ class ApiClient {
     return data['media'] as Map<String, dynamic>;
   }
 
+  @override
   Future<Map<String, dynamic>> assignSlotMedia({
     required String albumId,
     required String slotId,
@@ -215,6 +297,7 @@ class ApiClient {
     return response.data as Map<String, dynamic>;
   }
 
+  @override
   Future<void> clearSlotMedia({
     required String albumId,
     required String slotId,
@@ -222,6 +305,7 @@ class ApiClient {
     await _dio.post('/api/albums/$albumId/slots/$slotId/clear');
   }
 
+  @override
   Future<void> updatePageLayout({
     required String albumId,
     required int pageNumber,
@@ -233,6 +317,7 @@ class ApiClient {
     );
   }
 
+  @override
   Future<Map<String, dynamic>> createOrder({
     required String albumId,
     required String pickupPointId,
@@ -257,7 +342,15 @@ class ApiClient {
   }
 }
 
-final apiClientProvider = Provider<ApiClient>((ref) {
+/// Провайдер абстрактного клиента API (SOLID: DIP)
+final apiClientProvider = Provider<IApiClient>((ref) {
   return ApiClient();
 });
+
+/// Сегрегированные провайдеры (SOLID: ISP)
+final authApiProvider = Provider<IAuthApi>((ref) => ref.watch(apiClientProvider));
+final albumApiProvider = Provider<IAlbumApi>((ref) => ref.watch(apiClientProvider));
+final mediaApiProvider = Provider<IMediaApi>((ref) => ref.watch(apiClientProvider));
+final slotApiProvider = Provider<ISlotApi>((ref) => ref.watch(apiClientProvider));
+final orderApiProvider = Provider<IOrderApi>((ref) => ref.watch(apiClientProvider));
 

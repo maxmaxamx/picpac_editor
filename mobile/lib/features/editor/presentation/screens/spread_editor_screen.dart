@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/session/session_state.dart';
 import '../../../../core/theme/picpac_colors.dart';
@@ -14,6 +11,9 @@ import '../../../cart/presentation/screens/cart_screen.dart';
 import '../../domain/mock_data.dart';
 import '../../domain/models.dart';
 import '../controllers/editor_controller.dart';
+import '../widgets/dialogs/share_album_dialog.dart';
+import '../widgets/sheets/cover_voting_sheet.dart';
+import '../widgets/sheets/members_sheet.dart';
 import '../widgets/zone1_top_bar.dart';
 import '../widgets/zone2_page_minimap.dart';
 import '../widgets/zone3_spread_canvas.dart';
@@ -43,8 +43,6 @@ class SpreadEditorScreen extends ConsumerStatefulWidget {
 }
 
 class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
-  int _selectedCoverPhotoIndex = 0;
-
   @override
   void initState() {
     super.initState();
@@ -785,345 +783,23 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
     );
   }
 
-  /// Просмотр участников альбома
+  /// Просмотр участников альбома (SOLID: SRP)
   void _openMembersSheet() {
     final state = ref.read(editorControllerProvider);
-    final members = state.members;
-
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: PicPacColors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
-      ),
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36.0,
-                    height: 4.0,
-                    margin: const EdgeInsets.only(bottom: 16.0),
-                    decoration: BoxDecoration(
-                      color: PicPacColors.borderDefault,
-                      borderRadius: BorderRadius.circular(2.0),
-                    ),
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Участники альбома (${members.length})',
-                      style: PicPacTypography.h2Section,
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                      decoration: BoxDecoration(
-                        color: PicPacColors.surfaceGrey,
-                        borderRadius: BorderRadius.circular(6.0),
-                      ),
-                      child: Text(
-                        'Код: ${state.inviteCode.isNotEmpty ? state.inviteCode : "849204"}',
-                        style: PicPacTypography.metaInfo.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16.0),
-                ...members.map((member) {
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8.0),
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                    decoration: BoxDecoration(
-                      color: PicPacColors.surfaceGrey,
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    child: Row(
-                      children: [
-                        Stack(
-                          children: [
-                            CircleAvatar(
-                              radius: 18.0,
-                              backgroundImage: NetworkImage(member.avatarUrl),
-                            ),
-                            if (member.isOnline)
-                              Positioned(
-                                right: 0,
-                                bottom: 0,
-                                child: Container(
-                                  width: 10.0,
-                                  height: 10.0,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF22C55E),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: PicPacColors.white, width: 1.5),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(width: 12.0),
-                        Expanded(
-                          child: Text(
-                            member.name,
-                            style: PicPacTypography.buttonTextDark,
-                          ),
-                        ),
-                        Text(
-                          member.isOnline ? 'в сети' : 'был(а) недавно',
-                          style: PicPacTypography.metaInfo.copyWith(
-                            color: member.isOnline ? const Color(0xFF22C55E) : PicPacColors.textMuted,
-                            fontWeight: member.isOnline ? FontWeight.w600 : FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-        );
-      },
+    MembersSheet.show(
+      context,
+      members: state.members,
+      inviteCode: state.inviteCode,
     );
   }
 
-  /// Голосование за обложку книги
+  /// Голосование за обложку книги (SOLID: SRP)
   void _openCoverVotingSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: PicPacColors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
-      ),
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            final editorState = ref.watch(editorControllerProvider);
-            final pool = editorState.poolPhotos;
-            final photosList = pool.isNotEmpty ? pool : MockData.poolPhotos;
-            final safeIndex = _selectedCoverPhotoIndex.clamp(0, photosList.length - 1);
-            final activePhoto = photosList[safeIndex];
-            final photoVotes = editorState.coverVotes[activePhoto.id] ?? 0;
-            final isLeader = editorState.winningCoverPhoto?.id == activePhoto.id;
-
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 36.0,
-                        height: 4.0,
-                        margin: const EdgeInsets.only(bottom: 16.0),
-                        decoration: BoxDecoration(
-                          color: PicPacColors.borderDefault,
-                          borderRadius: BorderRadius.circular(2.0),
-                        ),
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        const Icon(LucideIcons.crown, color: Color(0xFFF59E0B), size: 22.0),
-                        const SizedBox(width: 8.0),
-                        Expanded(
-                          child: Text(
-                            'Голосование за обложку',
-                            style: PicPacTypography.h2Section,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6.0),
-                    Text(
-                      'Выберите фото, которое станет лицом альбома всего класса:',
-                      style: PicPacTypography.photoCaption.copyWith(
-                        color: PicPacColors.textMuted,
-                      ),
-                    ),
-                    const SizedBox(height: 16.0),
-                    Stack(
-                      children: [
-                        SizedBox(
-                          height: 200.0,
-                          width: double.infinity,
-                          child: PicPacImage(
-                            imageUrl: activePhoto.imageUrl,
-                            borderRadius: BorderRadius.circular(10.0),
-                          ),
-                        ),
-                        if (isLeader)
-                          Positioned(
-                            top: 10.0,
-                            left: 10.0,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF59E0B),
-                                borderRadius: BorderRadius.circular(8.0),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.18),
-                                    blurRadius: 4.0,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(LucideIcons.crown, size: 14.0, color: Colors.white),
-                                  const SizedBox(width: 4.0),
-                                  Text(
-                                    'Лидер голосования',
-                                    style: PicPacTypography.metaInfo.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        Positioned(
-                          bottom: 10.0,
-                          right: 10.0,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.7),
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(LucideIcons.heart, size: 13.0, color: PicPacColors.primaryCoral),
-                                const SizedBox(width: 4.0),
-                                Text(
-                                  '$photoVotes голосов',
-                                  style: PicPacTypography.metaInfo.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12.0),
-                    // Карусель миниатюр кандидатов на обложку
-                    SizedBox(
-                      height: 60.0,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: photosList.length,
-                        separatorBuilder: (context, index) => const SizedBox(width: 8.0),
-                        itemBuilder: (ctx, idx) {
-                          final p = photosList[idx];
-                          final isCurrent = idx == safeIndex;
-                          final vCount = editorState.coverVotes[p.id] ?? 0;
-                          return GestureDetector(
-                            onTap: () {
-                              setSheetState(() {
-                                _selectedCoverPhotoIndex = idx;
-                              });
-                            },
-                            child: Stack(
-                              children: [
-                                Container(
-                                  width: 60.0,
-                                  height: 60.0,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8.0),
-                                    border: Border.all(
-                                      color: isCurrent ? PicPacColors.primaryCoral : PicPacColors.borderDefault,
-                                      width: isCurrent ? 2.5 : 1.0,
-                                    ),
-                                  ),
-                                  child: PicPacImage(
-                                    imageUrl: p.imageUrl,
-                                    borderRadius: BorderRadius.circular(6.0),
-                                  ),
-                                ),
-                                if (vCount > 0)
-                                  Positioned(
-                                    top: 3.0,
-                                    right: 3.0,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withValues(alpha: 0.7),
-                                        borderRadius: BorderRadius.circular(4.0),
-                                      ),
-                                      child: Text(
-                                        '$vCount',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 9.0,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 16.0),
-                    GestureDetector(
-                      onTap: () {
-                        ref.read(editorControllerProvider.notifier).voteCover(activePhoto.id);
-                        Navigator.pop(sheetContext);
-                        _showToast(context, 'Ваш голос за обложку альбома сохранен!');
-                      },
-                      child: Container(
-                        height: 46.0,
-                        decoration: BoxDecoration(
-                          color: PicPacColors.primaryCoral,
-                          borderRadius: BorderRadius.circular(8.0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: PicPacColors.primaryCoral.withValues(alpha: 0.25),
-                              blurRadius: 8.0,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        alignment: Alignment.center,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(LucideIcons.heart, size: 16.0, color: Colors.white),
-                            const SizedBox(width: 8.0),
-                            Text(
-                              'Голосовать за этот вариант',
-                              style: PicPacTypography.buttonText,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+    CoverVotingSheet.show(
+      context,
+      editorState: ref.read(editorControllerProvider),
+      onVote: (photoId) => ref.read(editorControllerProvider.notifier).voteCover(photoId),
+      onToast: (msg) => _showToast(context, msg),
     );
   }
 
@@ -1170,227 +846,12 @@ class _SpreadEditorScreenState extends ConsumerState<SpreadEditorScreen> {
     );
   }
 
+  /// Диалог «Поделиться / Пригласить» (SOLID: SRP)
   void _showShareDialog(String inviteCode) {
-    final rawCode = inviteCode.isNotEmpty ? inviteCode : '849204';
-    final displayCode = rawCode.length == 6
-        ? '${rawCode.substring(0, 3)} - ${rawCode.substring(3)}'
-        : rawCode;
-    final shareUrl = 'picpac://join?code=$rawCode';
-
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: PicPacColors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.0),
-          ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8.0),
-                decoration: BoxDecoration(
-                  color: PicPacColors.primaryCoral.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                child: const Icon(
-                  LucideIcons.share2,
-                  size: 20.0,
-                  color: PicPacColors.primaryCoral,
-                ),
-              ),
-              const SizedBox(width: 12.0),
-              Expanded(
-                child: Text(
-                  'Пригласить в альбом',
-                  style: PicPacTypography.h2Section.copyWith(fontSize: 18.0),
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Поделитесь ссылкой или кодом с участниками для совместного заполнения альбома:',
-                style: PicPacTypography.photoCaption.copyWith(fontSize: 13.0),
-              ),
-              const SizedBox(height: 16.0),
-              // Ссылка на приложение с кодом
-              Text(
-                'Ссылка на приложение (Live-режим):',
-                style: PicPacTypography.buttonTextDark.copyWith(
-                  fontSize: 12.0,
-                  color: PicPacColors.textMuted,
-                ),
-              ),
-              const SizedBox(height: 6.0),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(10.0),
-                  onTap: () async {
-                    Clipboard.setData(ClipboardData(text: shareUrl));
-                    _showToast(context, 'Ссылка скопирована!');
-                    final uri = Uri.parse(shareUrl);
-                    try {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
-                    } catch (_) {}
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                    decoration: BoxDecoration(
-                      color: PicPacColors.surfaceGrey,
-                      borderRadius: BorderRadius.circular(10.0),
-                      border: Border.all(color: PicPacColors.borderDefault),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(LucideIcons.link, size: 16.0, color: PicPacColors.textMuted),
-                        const SizedBox(width: 8.0),
-                        Expanded(
-                          child: Text(
-                            shareUrl,
-                            style: PicPacTypography.photoCaption.copyWith(
-                              fontSize: 13.0,
-                              color: PicPacColors.primaryCoral,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(LucideIcons.copy, size: 18.0, color: PicPacColors.textDark),
-                          tooltip: 'Скопировать ссылку',
-                          constraints: const BoxConstraints(),
-                          padding: EdgeInsets.zero,
-                          onPressed: () {
-                            Clipboard.setData(ClipboardData(text: shareUrl));
-                            _showToast(context, 'Ссылка скопирована в буфер обмена!');
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14.0),
-              // Код альбома
-              Text(
-                'Код альбома:',
-                style: PicPacTypography.buttonTextDark.copyWith(
-                  fontSize: 12.0,
-                  color: PicPacColors.textMuted,
-                ),
-              ),
-              const SizedBox(height: 6.0),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
-                decoration: BoxDecoration(
-                  color: PicPacColors.surfaceGrey,
-                  borderRadius: BorderRadius.circular(10.0),
-                  border: Border.all(color: PicPacColors.borderDefault),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      displayCode,
-                      style: const TextStyle(
-                        fontSize: 22.0,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 4.0,
-                        color: PicPacColors.textDark,
-                      ),
-                    ),
-                    const SizedBox(width: 12.0),
-                    IconButton(
-                      icon: const Icon(LucideIcons.copy, size: 18.0, color: PicPacColors.textDark),
-                      tooltip: 'Скопировать код',
-                      constraints: const BoxConstraints(),
-                      padding: EdgeInsets.zero,
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: rawCode));
-                        _showToast(context, 'Код $rawCode скопирован!');
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          actionsPadding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 18.0),
-          actions: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // 1. Кнопка "Поделиться ссылкой" (растянута по центру, сверху)
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: PicPacColors.primaryCoral,
-                    foregroundColor: PicPacColors.white,
-                    elevation: 0,
-                    minimumSize: const Size.fromHeight(48.0),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                  ),
-                  icon: const Icon(LucideIcons.share2, size: 18.0),
-                  label: const Text(
-                    'Поделиться ссылкой',
-                    style: TextStyle(
-                      fontSize: 15.0,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  onPressed: () async {
-                    Clipboard.setData(ClipboardData(text: shareUrl));
-
-                    final box = context.findRenderObject() as RenderBox?;
-                    final origin = box != null
-                        ? box.localToGlobal(Offset.zero) & box.size
-                        : const Rect.fromLTWH(0, 0, 100, 100);
-
-                    await SharePlus.instance.share(
-                      ShareParams(
-                        text: 'Присоединяйся к созданию фотоальбома в PicPac!\n\nСсылка для входа: $shareUrl\nКод альбома: $rawCode',
-                        subject: 'Приглашение в фотоальбом PicPac',
-                        sharePositionOrigin: origin,
-                      ),
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 10.0),
-
-                // 2. Кнопка "Выход" (под кнопкой поделиться, растянута по центру)
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: PicPacColors.textDark,
-                    minimumSize: const Size.fromHeight(44.0),
-                    side: const BorderSide(color: PicPacColors.borderDefault, width: 1.2),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                  ),
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text(
-                    'Выход',
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        );
-      },
+    ShareAlbumDialog.show(
+      context,
+      inviteCode: inviteCode,
+      onToast: (msg) => _showToast(context, msg),
     );
   }
 

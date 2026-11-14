@@ -134,7 +134,7 @@ class EditorController extends Notifier<EditorState> {
   StreamSubscription? _pageUpdatedSub;
   StreamSubscription? _connectionSub;
 
-  ApiClient get _apiClient => ref.read(apiClientProvider);
+  IApiClient get _apiClient => ref.read(apiClientProvider);
   SocketService get _socketService => ref.read(socketServiceProvider);
 
   UserProfile? _currentUser;
