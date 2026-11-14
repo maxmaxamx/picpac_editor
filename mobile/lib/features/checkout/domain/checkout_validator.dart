@@ -48,3 +48,4 @@ class CheckoutValidator implements ICheckoutValidator {
     return null; // Успешно
   }
 }
+

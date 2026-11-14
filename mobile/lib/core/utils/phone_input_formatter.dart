@@ -54,3 +54,4 @@ class BelarusPhoneFormatter extends TextInputFormatter {
     );
   }
 }
+
